@@ -1,0 +1,13 @@
+# Local IDE files (all project modules)
+.idea/
+
+# Local secrets and configuration
+.env
+.env.*
+!.env.example
+/personalwebsite/src/main/resources/application.properties
+
+# Local Spring profiles
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
