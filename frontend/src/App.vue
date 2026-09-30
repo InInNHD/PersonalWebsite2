@@ -4,6 +4,7 @@
       <RouterLink class="brand" to="/">我的个人网站</RouterLink>
       <nav>
         <RouterLink to="/">文章</RouterLink>
+        <RouterLink to="/admin">管理</RouterLink>
       </nav>
     </header>
 

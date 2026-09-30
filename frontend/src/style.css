@@ -95,3 +95,5 @@ select {
   .page-heading { align-items: stretch; flex-direction: column; }
   .site-header { padding: 18px 20px; }
 }
+
+.site-header nav { display: flex; gap: 20px; }
