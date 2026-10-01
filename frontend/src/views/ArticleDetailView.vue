@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
 
@@ -8,6 +8,13 @@ const article = ref(null)
 const loading = ref(false)
 const error = ref('')
 
+// 每个组件实例维护自己的请求编号。
+let latestRequestId = 0
+
+onBeforeUnmount(() => {
+  latestRequestId += 1
+})
+
 // 不允许 Markdown 中的原始 HTML 直接进入页面。
 const markdown = new MarkdownIt({ html: false, linkify: true })
 const contentHtml = computed(() =>
@@ -15,25 +22,42 @@ const contentHtml = computed(() =>
 )
 
 async function loadArticle(id) {
+  const requestId = ++latestRequestId
+
   loading.value = true
   error.value = ''
   article.value = null
 
   try {
-    const response = await fetch(`/api/articles/${encodeURIComponent(id)}`)
+    const response = await fetch(
+        `/api/articles/${encodeURIComponent(id)}`
+    )
 
     if (response.status === 404) {
       throw new Error('文章不存在或尚未发布')
     }
+
     if (!response.ok) {
       throw new Error(`请求失败：HTTP ${response.status}`)
     }
 
-    article.value = await response.json()
+    const data = await response.json()
+
+    // 只接受当前最后一次请求的文章内容。
+    if (requestId !== latestRequestId) return
+
+    article.value = data
   } catch (cause) {
-    error.value = cause.message
+    // 防止上一篇文章的错误覆盖当前文章。
+    if (requestId !== latestRequestId) return
+
+    error.value = cause instanceof Error
+        ? cause.message
+        : '加载文章失败'
   } finally {
-    loading.value = false
+    if (requestId === latestRequestId) {
+      loading.value = false
+    }
   }
 }
 
