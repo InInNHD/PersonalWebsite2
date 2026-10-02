@@ -97,3 +97,12 @@ select {
 }
 
 .site-header nav { display: flex; gap: 20px; }
+
+.site-header {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.site-header nav {
+  flex-wrap: wrap;
+}
