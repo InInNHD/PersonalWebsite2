@@ -6,12 +6,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 @RestController
 @RequestMapping("/api/articles")
-
 public class ArticleController {
 
     private final JdbcTemplate jdbcTemplate;
@@ -20,13 +20,15 @@ public class ArticleController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-public record ArticleSummary(
-        long id,
-        String title,
-        String summary,
-        String type,
-        LocalDateTime publishedAt
-) {}
+    public record ArticleSummary(
+            long id,
+            String title,
+            String summary,
+            String type,
+            LocalDateTime publishedAt,
+            Long categoryId,
+            String categoryName
+    ) {}
 
     public record ArticleDetail(
             long id,
@@ -34,71 +36,104 @@ public record ArticleSummary(
             String summary,
             String contentMarkdown,
             String type,
-            LocalDateTime publishedAt
+            LocalDateTime publishedAt,
+            Long categoryId,
+            String categoryName
     ) {}
 
     @GetMapping
     public List<ArticleSummary> list(
-            @RequestParam(required = false) String type
+            @RequestParam(name = "type", required = false) String type,
+            @RequestParam(name = "categoryId", required = false)
+            Long categoryId
     ) {
+        // LEFT JOIN 保留未分类的文章。
+        // 如果使用普通 JOIN，category_id 为空的文章就会被排除。
         String sql = """
-                SELECT id, title, summary, type, published_at
-                FROM article
-                WHERE status = 'PUBLISHED'
+                SELECT a.id, a.title, a.summary, a.type,
+                       a.published_at, a.category_id,
+                       c.name AS category_name
+                FROM article a
+                LEFT JOIN category c ON c.id = a.category_id
+                WHERE a.status = 'PUBLISHED'
                 """;
+
+        // 参数的添加顺序与 SQL 中问号的顺序一致。
+        List<Object> parameters = new ArrayList<>();
 
         if (type != null) {
-            if (!Set.of("NOTE","THOUGHT","DIARY").contains(type)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的文章类型");
+            if (!Set.of("NOTE", "THOUGHT", "DIARY").contains(type)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "不支持的文章类型"
+                );
             }
-            sql += " AND type = ?";
-        }
-        sql += " ORDER BY published_at DESC, id DESC LIMIT 20";
 
-        if(type == null) {
-            return jdbcTemplate.query(sql, (rs, rowNum) -> new ArticleSummary(
-                    rs.getLong("id"),
-                    rs.getString("title"),
-                    rs.getString("summary"),
-                    rs.getString("type"),
-                    rs.getTimestamp("published_at").toLocalDateTime()
-            ));
+            sql += " AND a.type = ?";
+            parameters.add(type);
         }
-            return jdbcTemplate.query(sql, (rs, rowNum) -> new ArticleSummary(
-                    rs.getLong("id"),
-                    rs.getString("title"),
-                    rs.getString("summary"),
-                    rs.getString("type"),
-                    rs.getTimestamp("published_at").toLocalDateTime()
-            ), type);
-        }
-    @GetMapping("/{id}")
-    public ArticleDetail detail(@PathVariable long id) {
-        String sql = """
-                SELECT id, title, summary, content_markdown, type, published_at
-                FROM article
-                WHERE id = ? AND status = 'PUBLISHED'
-                """;
 
-        ArticleDetail article = jdbcTemplate.query(sql,rs -> {
-            if (!rs.next()) {
-                return null;
+        if (categoryId != null) {
+            if (categoryId <= 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "分类编号必须大于 0"
+                );
             }
-            return new ArticleDetail(
-                    rs.getLong("id"),
-                    rs.getString("title"),
-                    rs.getString("summary"),
-                    rs.getString("content_markdown"),
-                    rs.getString("type"),
-                    rs.getTimestamp("published_at").toLocalDateTime()
-            );
-        }, id);
-        if (article == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "文章不存在");
+
+            sql += " AND a.category_id = ?";
+            parameters.add(categoryId);
         }
 
-        return article;
+        // 延续现有列表规则：显示满足筛选条件的最新 20 篇。
+        sql += " ORDER BY a.published_at DESC, a.id DESC LIMIT 20";
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new ArticleSummary(
+                        rs.getLong("id"),
+                        rs.getString("title"),
+                        rs.getString("summary"),
+                        rs.getString("type"),
+                        rs.getTimestamp("published_at").toLocalDateTime(),
+                        rs.getObject("category_id", Long.class),
+                        rs.getString("category_name")
+                ),
+                parameters.toArray()
+        );
     }
 
+    @GetMapping("/{id}")
+    public ArticleDetail detail(@PathVariable("id") long id) {
+        String sql = """
+                SELECT a.id, a.title, a.summary, a.content_markdown,
+                       a.type, a.published_at, a.category_id,
+                       c.name AS category_name
+                FROM article a
+                LEFT JOIN category c ON c.id = a.category_id
+                WHERE a.id = ? AND a.status = 'PUBLISHED'
+                """;
 
+        List<ArticleDetail> rows = jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new ArticleDetail(
+                        rs.getLong("id"),
+                        rs.getString("title"),
+                        rs.getString("summary"),
+                        rs.getString("content_markdown"),
+                        rs.getString("type"),
+                        rs.getTimestamp("published_at").toLocalDateTime(),
+                        rs.getObject("category_id", Long.class),
+                        rs.getString("category_name")
+                ),
+                id
+        );
+
+        // 草稿和不存在的编号均返回 404。
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "文章不存在"
+            );
+        }
+
+        return rows.get(0);
+    }
 }

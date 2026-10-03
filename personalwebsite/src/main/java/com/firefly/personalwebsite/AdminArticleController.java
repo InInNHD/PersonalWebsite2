@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
+import java.sql.Types;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -13,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.beans.Transient;
+
 import java.sql.Statement;
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class AdminArticleController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // 请求只包含文章内容，草稿状态和发布时间由后端决定。
+    //// 请求只包含文章内容，草稿状态和发布时间由后端决定。
     public record DraftRequest(
             @NotBlank @Size(max = 200)
             String title,
@@ -39,8 +41,12 @@ public class AdminArticleController {
             String contentMarkdown,
 
             @NotBlank @Pattern(regexp = "NOTE|THOUGHT|DIARY")
-            String type
-    ){}
+            String type,
+
+            // null 表示未分类；填写编号时必须大于 0。
+            @Positive
+            Long categoryId
+    ) {}
 
     // 新建和发布都返回文章编号与当前状态。
     public record ArticleResult(long id, String status) {}
@@ -51,11 +57,13 @@ public class AdminArticleController {
     public ArticleResult createDraft(
             @Valid @RequestBody DraftRequest request
     ) {
+        checkCategory(request.categoryId());
         String sql = """
-                INSERT INTO article
-                    (title, summary, content_markdown,type,status,published_at)
-                VALUES (?, ?, ?, ?, 'DRAFT', NULL)
-                """;
+        INSERT INTO article
+            (title, summary, content_markdown, type,
+             category_id, status, published_at)
+        VALUES (?, ?, ?, ?, ?, 'DRAFT', NULL)
+        """;
         // 保存 MySQL 返回的自增编号。
         // 编号与 INSERT 来自同一次操作，避免从连接池取到另一条连接。
 
@@ -69,6 +77,13 @@ public class AdminArticleController {
             statement.setString(2, request.summary().strip());
             statement.setString(3, request.contentMarkdown());
             statement.setString(4, request.type());
+
+            // SQL 的第五个占位符对应 category_id。
+            if (request.categoryId() == null) {
+                statement.setNull(5, Types.BIGINT);
+            } else {
+                statement.setLong(5, request.categoryId());
+            }
 
             return statement;
         }, keyHolder);
@@ -126,8 +141,9 @@ public class AdminArticleController {
             String summary,
             String contentMarkdown,
             String type,
-            String status
-    ){}
+            String status,
+            Long categoryId
+    ) {}
 
     @GetMapping
     public List<AdminSummary> list() {
@@ -148,10 +164,11 @@ public class AdminArticleController {
     @GetMapping("/{id}")
     public AdminDetail detail(@PathVariable("id") long id) {
         String sql = """
-                SELECT id, title, summary, content_markdown, type, status
-                FROM article
-                WHERE id = ?
-                """;
+        SELECT id, title, summary, content_markdown,
+               type, status, category_id
+        FROM article
+        WHERE id = ?
+        """;
 
         AdminDetail article = jdbcTemplate.query(sql, rs -> {
             if (!rs.next()) {
@@ -164,7 +181,10 @@ public class AdminArticleController {
                     rs.getString("summary"),
                     rs.getString("content_markdown"),
                     rs.getString("type"),
-                    rs.getString("status")
+                    rs.getString("status"),
+
+                    // getObject 保留 SQL NULL；不能用 getLong 将其读成 0。
+                    rs.getObject("category_id", Long.class)
             );
         }, id);
 
@@ -175,27 +195,49 @@ public class AdminArticleController {
         return article;
     }
 
-    @PutMapping(value = "/{id}", consumes = "application/json")
-    @Transactional
-    public AdminDetail update(
-            @PathVariable("id") long id,
-            @Valid @RequestBody DraftRequest request) {
-        // 修改内容时保留文章状态和第一次发布时间。
-        String sql = """
-                UPDATE article
-                SET title = ?, summary = ?, content_markdown = ?, type = ?
-                WHERE id = ?
-                """;
-        jdbcTemplate.update(
-                sql,
-                request.title().strip(),
-                request.summary().strip(),
-                request.contentMarkdown(),
-                request.type(),
-                id
+        @PutMapping(value = "/{id}", consumes = "application/json")
+        @Transactional
+        public AdminDetail update(
+        @PathVariable("id") long id,
+        @Valid @RequestBody DraftRequest request
+) {
+            checkCategory(request.categoryId());
+
+            // 保留文章状态和第一次发布时间，只更新内容与分类。
+            String sql = """
+            UPDATE article
+            SET title = ?, summary = ?, content_markdown = ?,
+                type = ?, category_id = ?
+            WHERE id = ?
+            """;
+
+            jdbcTemplate.update(
+                    sql,
+                    request.title().strip(),
+                    request.summary().strip(),
+                    request.contentMarkdown(),
+                    request.type(),
+                    request.categoryId(),
+                    id
+            );
+
+            return detail(id);
+        }
+
+    private void checkCategory(Long categoryId) {
+        // 允许文章不设置分类。
+        if (categoryId == null) return;
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM category WHERE id = ?",
+                Integer.class,
+                categoryId
         );
-        // 返回保存后的内容，同时确认文章存在。
-        // 即使保存的内容没有变化，也能正常返回结果。
-        return detail(id);
+
+        if (count == null || count == 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "所选分类不存在"
+            );
+        }
     }
 }

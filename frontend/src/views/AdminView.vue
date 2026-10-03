@@ -21,6 +21,7 @@ function emptyArticle() {
     contentMarkdown: '',
     type: 'NOTE',
     status: 'DRAFT',
+    categoryId: null,
   }
 }
 
@@ -101,6 +102,7 @@ if(!response.ok) {
     401: '管理员认证失败，请检查密码；若密码已变更，请重新登录。',
     403: '安全校验失败，请重试；若仍失败，请检查后端日志。',
     404: '记录不存在，请刷新列表。',
+    409: '分类名称已存在，请换一个名称。',
   }
   throw new Error(descriptions[response.status] ?? `请求失败: HTTP ${response.status}`)
 }
@@ -137,6 +139,7 @@ async function connect() {
     await request('/check')
     await loadList()
     await loadResources()
+    await loadCategories()
     connected.value = true
     password.value = ''
   })
@@ -171,6 +174,7 @@ async function persist() {
           summary: form.summary,
           contentMarkdown: form.contentMarkdown,
           type: form.type,
+          categoryId: form.categoryId,
         }),
       }
   )
@@ -295,6 +299,49 @@ async function refreshResources() {
   // 仅刷新左侧列表，保留右侧正在填写的内容。
   await run(loadResources)
 }
+
+const articleCategories = ref([])
+
+async function loadCategories() {
+  articleCategories.value = await request('/categories')
+}
+
+// 分类只有名称一个字段，使用浏览器输入框完成新增和重命名。
+async function editCategory(category = null) {
+  if (busy.value) return
+
+  const input = window.prompt(
+      category ? '修改分类名称' : '输入新分类名称',
+      category?.name ?? ''
+  )
+
+  // 点击取消时不发送请求。
+  if (input === null) return
+
+  await run(async () => {
+    const name = input.trim()
+
+    if (!name || name.length > 50) {
+      throw new Error('分类名称需要包含 1～50 个字符。')
+    }
+
+    const result = await request(
+        category ? `/categories/${category.id}` : '/categories',
+        {
+          method: category ? 'PUT' : 'POST',
+          body: JSON.stringify({ name }),
+        }
+    )
+
+    // 用保存结果更新当前列表，文章下拉框也会立即更新名称。
+    articleCategories.value = [
+      ...articleCategories.value.filter(item => item.id !== result.id),
+      result,
+    ].sort((a, b) => a.id - b.id)
+
+    message.value = category ? '分类名称已更新。' : '分类已创建。'
+  })
+}
 </script>
 
 <template>
@@ -321,6 +368,29 @@ async function refreshResources() {
     </form>
 
     <fieldset v-else :disabled="busy">
+      <section class="category-admin">
+        <h2>分类管理</h2>
+
+        <button type="button" @click="editCategory()">
+          新增分类
+        </button>
+
+        <p v-if="articleCategories.length === 0">
+          暂时没有分类，可以先创建“Java”或“Vue”。
+        </p>
+
+        <ul>
+          <li v-for="category in articleCategories" :key="category.id">
+            <button type="button" @click="editCategory(category)">
+              {{ category.name }} · 重命名
+            </button>
+          </li>
+        </ul>
+
+        <!-- 就近显示反馈，避免再次出现“操作了但看不到提示”。 -->
+        <p v-if="error" class="error" role="alert">{{ error }}</p>
+        <p v-if="message" role="status">{{ message }}</p>
+      </section>
       <div class="toolbar">
         <button type="button" @click="newArticle">新建文章</button>
         <span v-if="busy">正在处理…</span>
@@ -367,6 +437,22 @@ async function refreshResources() {
               <option value="NOTE">笔记</option>
               <option value="THOUGHT">心得</option>
               <option value="DIARY">日记</option>
+            </select>
+          </label>
+
+          <label>
+            分类
+            <select v-model="form.categoryId">
+              <!-- 冒号保证绑定的是 null，而不是字符串 "null"。 -->
+              <option :value="null">未分类</option>
+
+              <option
+                  v-for="category in articleCategories"
+                  :key="category.id"
+                  :value="category.id"
+              >
+                {{ category.name }}
+              </option>
             </select>
           </label>
 
@@ -542,5 +628,10 @@ small { display: block; margin-top: 6px; color: #607078; }
 }
 .toolbar {
   flex-wrap: wrap;
+}
+.category-admin {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #dce2e6;
 }
 </style>

@@ -76,6 +76,7 @@ watch(() => route.params.id, loadArticle, { immediate: true })
       <header class="article-header">
         <small>{{ article.type }} · {{ article.publishedAt?.slice(0, 10) }}</small>
         <h1>{{ article.title }}</h1>
+        <p>分类：{{ article.categoryName ?? '未分类' }}</p>
         <p>{{ article.summary }}</p>
       </header>
 
