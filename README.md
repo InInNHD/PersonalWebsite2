@@ -1,13 +1,13 @@
 # PersonalWebsite2
 
-个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类及文章多标签。
+个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类、文章多标签及栏目＋分类＋标签组合筛选。
 
 ## 项目结构
 
 - `frontend/`：前端应用及回归测试。
 - `personalwebsite/`：后端应用及真实 MySQL 接口测试。
 - `database/`：按编号执行的数据库初始化与升级脚本。
-- `docs/`：手敲指南和项目进度。`05-tag-filter.md` 是下一轮开发指南，标签筛选尚未实现。
+- `docs/`：手敲指南和项目进度。`05-tag-filter.md` 对应的标签筛选已完成，自动化测试通过。
 
 ## 环境准备
 
@@ -55,6 +55,7 @@ SHOW TABLES;
 
 - 从 `v0.1.0` 升级：已有初始文章表，依次执行 `001`、`002`、`003`、`004`；如果部分脚本已经应用，跳过对应项。
 - 从 `v0.2.0` 升级：已有文章、资源、分类表，只执行 `003-tag.sql` 和 `004-article-tag.sql`。
+- 从 `v0.3.0` 升级：数据库结构不变，更新代码并重启前后端即可。
 - 本地已完成标签表和关联表：数据库无需再次执行脚本。
 
 已有数据库升级时跳过 `000-init-article.sql`。分类升级后，已有文章的 `category_id` 为 `NULL`，页面显示“未分类”；标签升级不会修改现有文章，没有关联记录的文章显示为无标签。
@@ -116,4 +117,4 @@ cd E:\PersonalWebsite2\personalwebsite
 
 后端流程测试连接真实 MySQL，需要完整的五张表。测试中的写入通过事务回滚，MySQL 自增编号仍可能前进；建议使用独立测试数据库。`CategoryArticleFlowTests` 使用的固定密码仅属于测试上下文。
 
-版本验证记录见 `docs/RELEASE-v0.3.0.md`。Release 提供源码下载，运行时仍需自行准备环境和数据库。
+最新版本验证记录见 `docs/RELEASE-v0.4.0.md`，此前版本见 `docs/RELEASE-v0.3.0.md`。Release 提供源码下载，运行时仍需自行准备环境和数据库。

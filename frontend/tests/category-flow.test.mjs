@@ -28,27 +28,40 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
-test('栏目与分类同时传入，旧筛选结果不能覆盖最新列表', async () => {
+test('栏目分类标签同时传入，旧筛选结果不能覆盖最新列表', async () => {
   const pending = []
-  const app = component('ArticleListView.vue', 'loadArticles, type, categoryId, articles, error, loading', url => {
-    const item = { url, ...deferred() }
-    pending.push(item)
-    return item.promise
-  })
+  const app = component('ArticleListView.vue',
+      'loadArticles, type, categoryId, tagId, articles, error, loading', url => {
+        const item = { url, ...deferred() }
+        pending.push(item)
+        return item.promise
+      })
+
   app.type.value = 'NOTE'
   app.categoryId.value = 11
+  app.tagId.value = 101
   const first = app.loadArticles()
-  app.categoryId.value = 22
+  app.tagId.value = 202
   const second = app.loadArticles()
-  assert.equal(pending[0].url, '/api/articles?type=NOTE&categoryId=11')
-  assert.equal(pending[1].url, '/api/articles?type=NOTE&categoryId=22')
-  pending[1].resolve(response([{ id: 2, categoryName: 'Vue' }]))
+
+  assert.equal(pending[0].url, '/api/articles?type=NOTE&categoryId=11&tagId=101')
+  assert.equal(pending[1].url, '/api/articles?type=NOTE&categoryId=11&tagId=202')
+
+  pending[1].resolve(response([{ id: 2, tags: [{ id: 202, name: '当前标签' }] }]))
   await second
-  pending[0].resolve(response([{ id: 1, categoryName: 'Java' }]))
+  pending[0].resolve(response([{ id: 1, tags: [{ id: 101, name: '旧标签' }] }]))
   await first
-  assert.equal(app.articles.value[0].categoryName, 'Vue')
+
+  assert.equal(app.articles.value[0].id, 2)
+  assert.equal(app.articles.value[0].tags[0].id, 202)
   assert.equal(app.error.value, '')
   assert.equal(app.loading.value, false)
+
+  app.tagId.value = ''
+  const allTags = app.loadArticles()
+  assert.equal(pending[2].url, '/api/articles?type=NOTE&categoryId=11')
+  pending[2].resolve(response([]))
+  await allTags
 })
 
 test('旧请求结束不关闭新请求加载状态，失败也不覆盖新结果', async () => {

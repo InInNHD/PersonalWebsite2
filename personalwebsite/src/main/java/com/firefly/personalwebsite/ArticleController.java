@@ -51,8 +51,8 @@ public class ArticleController {
     @Transactional(readOnly = true)
     public List<ArticleSummary> list(
             @RequestParam(name = "type", required = false) String type,
-            @RequestParam(name = "categoryId", required = false)
-            Long categoryId
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "tagId", required = false) Long tagId
     ) {
         // LEFT JOIN 保留未分类的文章。
         // 如果使用普通 JOIN，category_id 为空的文章就会被排除。
@@ -89,7 +89,23 @@ public class ArticleController {
             sql += " AND a.category_id = ?";
             parameters.add(categoryId);
         }
+        if (tagId != null) {
+            if (tagId <= 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "标签编号必须大于 0");
+            }
 
+            // EXISTS 只判断“这篇文章是否关联了所选标签”。
+            // 不把关联表展开到文章列表中，因此多标签文章不会重复出现。
+            sql += """
+             AND EXISTS (
+                 SELECT 1
+                 FROM article_tag link
+                 WHERE link.article_id = a.id AND link.tag_id = ?
+             )
+            """;
+            parameters.add(tagId);
+        }
         // 延续现有列表规则：显示满足筛选条件的最新 20 篇。
         sql += " ORDER BY a.published_at DESC, a.id DESC LIMIT 20";
 

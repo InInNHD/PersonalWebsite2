@@ -251,6 +251,65 @@ class CategoryArticleFlowTests {
         assertTrue(containsId(publicGet("/api/tags", 200), first));
         assertTrue(containsId(publicGet("/api/tags", 200), second));
     }
+
+    @Test
+    void tagFilterCombinesWithTypeAndCategoryWithoutLeakingDrafts() throws Exception {
+        long category = createCategory("-filter-category");
+        long otherCategory = createCategory("-filter-other");
+        long firstTag = send(HttpMethod.POST, "/api/admin/tags",
+                Map.of("name", prefix + "-filter-one"), 201).get("id").asLong();
+        long secondTag = send(HttpMethod.POST, "/api/admin/tags",
+                Map.of("name", prefix + "-filter-two"), 201).get("id").asLong();
+
+        var payload = article(category);
+        payload.put("tagIds", java.util.List.of(firstTag, secondTag));
+        long note = send(HttpMethod.POST, "/api/admin/articles", payload, 201)
+                .get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + note + "/publish", null, 200);
+
+        payload.put("title", prefix + "-thought");
+        payload.put("type", "THOUGHT");
+        payload.put("tagIds", java.util.List.of(firstTag));
+        long thought = send(HttpMethod.POST, "/api/admin/articles", payload, 201)
+                .get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + thought + "/publish", null, 200);
+
+        payload.put("title", prefix + "-other-category");
+        payload.put("type", "NOTE");
+        payload.put("categoryId", otherCategory);
+        long other = send(HttpMethod.POST, "/api/admin/articles", payload, 201)
+                .get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + other + "/publish", null, 200);
+
+        payload.put("title", prefix + "-diary-draft");
+        payload.put("type", "DIARY");
+        payload.put("categoryId", category);
+        long draft = send(HttpMethod.POST, "/api/admin/articles", payload, 201)
+                .get("id").asLong();
+
+        var byTag = publicGet("/api/articles?tagId=" + firstTag, 200);
+        assertEquals(3, byTag.size());
+        assertTrue(containsId(byTag, note));
+        assertTrue(containsId(byTag, thought));
+        assertTrue(containsId(byTag, other));
+        assertFalse(containsId(byTag, draft));
+
+        String combined = "/api/articles?type=NOTE&categoryId="
+                + category + "&tagId=" + firstTag;
+        var filtered = publicGet(combined, 200);
+        assertEquals(1, filtered.size());
+        assertEquals(note, filtered.get(0).get("id").asLong());
+        assertEquals(2, filtered.get(0).get("tags").size());
+
+        assertEquals(1, publicGet("/api/articles?tagId=" + secondTag, 200).size());
+        assertEquals(0, publicGet("/api/articles?type=DIARY&tagId=" + firstTag, 200).size());
+        long missingTag = jdbc.queryForObject(
+                "SELECT COALESCE(MAX(id), 0) + 1000 FROM tag", Long.class);
+        assertEquals(0, publicGet("/api/articles?tagId=" + missingTag, 200).size());
+        publicGet("/api/articles?tagId=0", 400);
+        publicGet("/api/articles?tagId=-1", 400);
+        publicGet("/api/articles?tagId=invalid", 400);
+    }
     private long createCategory(String suffix) throws Exception {
         return send(HttpMethod.POST, "/api/admin/categories",
                 Map.of("name", prefix + suffix), 201).get("id").asLong();

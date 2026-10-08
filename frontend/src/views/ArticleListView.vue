@@ -8,6 +8,9 @@ const error = ref('')
 const articleCategories = ref([])
 const categoryId = ref('')
 const categoryError = ref('')
+const tags = ref([])
+const tagId = ref('') // 空字符串表示全部标签；选择标签后是数字编号。
+const tagError = ref('')
 
 // 分类只在页面进入时加载一次。
 // 离开页面后，不再接受这次加载结果。
@@ -49,6 +52,9 @@ async function loadArticles() {
       params.set('categoryId', String(categoryId.value))
     }
 
+    if (tagId.value !== '') {
+      params.set('tagId', String(tagId.value))
+    }
     const query = params.toString()
 
     const response = await fetch(
@@ -103,7 +109,25 @@ async function loadCategories() {
   }
 }
 
+async function loadTags() {
+  try {
+    const response = await fetch('/api/tags')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+    const data = await response.json()
+
+    // 页面已卸载时，丢弃尚未完成的标签加载结果。
+    if (disposed) return
+    tags.value = data
+  } catch {
+    if (disposed) return
+    tagError.value = '标签加载失败，请刷新页面重试。'
+  }
+}
+
 onMounted(loadCategories)
+
+onMounted(loadTags)
 
 onMounted(loadArticles)
 </script>
@@ -146,6 +170,16 @@ onMounted(loadArticles)
             </option>
           </select>
         </label>
+        <label>
+          标签
+          <select v-model="tagId" @change="loadArticles">
+            <option value="">全部标签</option>
+
+            <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+              {{ tag.name }}
+            </option>
+          </select>
+        </label>
       </div>
 
     </div>
@@ -153,6 +187,9 @@ onMounted(loadArticles)
       <p v-if="categoryError" class="error" role="alert">
         {{ categoryError }}
       </p>
+    <p v-if="tagError" class="error" role="alert">
+      {{ tagError }}
+    </p>
       <p v-if="loading">正在加载文章...</p>
     <p v-else-if="error" class="error">{{ error }}</p>
       <p v-else-if="articles.length === 0">
