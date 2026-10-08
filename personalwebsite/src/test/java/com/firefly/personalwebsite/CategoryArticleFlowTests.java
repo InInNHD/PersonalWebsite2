@@ -160,6 +160,97 @@ class CategoryArticleFlowTests {
                 "SELECT COUNT(*) FROM category WHERE name = ?", Long.class, prefix));
     }
 
+    @Test
+    void tagCreateRenameDuplicateAndValidation() throws Exception {
+        String name = prefix + "-tag";
+        var created = send(HttpMethod.POST, "/api/admin/tags", Map.of("name", "  " + name + "  "), 201);
+        long id = created.get("id").asLong();
+        assertEquals(name, created.get("name").asText());
+        assertTrue(containsId(publicGet("/api/tags", 200), id));
+        assertTrue(containsId(send(HttpMethod.GET, "/api/admin/tags", null, 200), id));
+        send(HttpMethod.POST, "/api/admin/tags", Map.of("name", name), 409);
+        send(HttpMethod.POST, "/api/admin/tags", Map.of("name", "   "), 400);
+        send(HttpMethod.POST, "/api/admin/tags", Map.of("name", "x".repeat(51)), 400);
+        var other = send(HttpMethod.POST, "/api/admin/tags", Map.of("name", name + "-other"), 201);
+        send(HttpMethod.PUT, "/api/admin/tags/" + other.get("id").asLong(), Map.of("name", name), 409);
+        String renamed = name + "-renamed";
+        var updated = send(HttpMethod.PUT, "/api/admin/tags/" + id, Map.of("name", renamed), 200);
+        assertEquals(id, updated.get("id").asLong());
+        assertEquals(renamed, updated.get("name").asText());
+        send(HttpMethod.PUT, "/api/admin/tags/" + id, Map.of("name", renamed), 200);
+        long missing = jdbc.queryForObject("SELECT COALESCE(MAX(id), 0) + 1000 FROM tag", Long.class);
+        send(HttpMethod.PUT, "/api/admin/tags/" + missing, Map.of("name", prefix), 404);
+        mvc.perform(get("/api/admin/tags")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/admin/tags").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("name", prefix + "-blocked"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void articleTagsSavePublishRenameAndClear() throws Exception {
+        long first = send(HttpMethod.POST, "/api/admin/tags",
+                Map.of("name", prefix + "-tag-one"), 201).get("id").asLong();
+        long second = send(HttpMethod.POST, "/api/admin/tags",
+                Map.of("name", prefix + "-tag-two"), 201).get("id").asLong();
+
+        var payload = article(null);
+        payload.put("tagIds", java.util.List.of(first, second, first));
+        long id = send(HttpMethod.POST, "/api/admin/articles", payload, 201)
+                .get("id").asLong();
+        String adminPath = "/api/admin/articles/" + id;
+        String publicPath = "/api/articles/" + id;
+
+        // 重复编号去重；草稿的公开详情和列表都不可见。
+        assertEquals(2, send(HttpMethod.GET, adminPath, null, 200)
+                .get("tagIds").size());
+        publicGet(publicPath, 404);
+        assertFalse(containsId(publicGet("/api/articles", 200), id));
+
+        send(HttpMethod.POST, adminPath + "/publish", null, 200);
+        var published = publicGet(publicPath, 200);
+        assertEquals(2, published.get("tags").size());
+        assertEquals(first, published.get("tags").get(0).get("id").asLong());
+        String publishedAt = published.get("publishedAt").asText();
+
+        var list = publicGet("/api/articles", 200);
+        boolean found = false;
+        for (var item : list) {
+            if (item.get("id").asLong() == id) {
+                assertEquals(2, item.get("tags").size());
+                found = true;
+            }
+        }
+        assertTrue(found);
+
+        send(HttpMethod.PUT, "/api/admin/tags/" + first,
+                Map.of("name", prefix + "-renamed"), 200);
+        assertEquals(prefix + "-renamed", publicGet(publicPath, 200)
+                .get("tags").get(0).get("name").asText());
+
+        // 无效标签返回 400，校验失败时不替换已有标签。
+        long missing = jdbc.queryForObject(
+                "SELECT COALESCE(MAX(id), 0) + 1000 FROM tag", Long.class);
+        payload.put("title", prefix + "-invalid-edit");
+        payload.put("tagIds", java.util.List.of(missing));
+        send(HttpMethod.PUT, adminPath, payload, 400);
+        assertEquals(2, publicGet(publicPath, 200).get("tags").size());
+
+        payload.put("title", prefix);
+        payload.put("tagIds", java.util.List.of(second));
+        assertEquals(1, send(HttpMethod.PUT, adminPath, payload, 200)
+                .get("tagIds").size());
+        assertEquals(second, publicGet(publicPath, 200)
+                .get("tags").get(0).get("id").asLong());
+
+        payload.put("tagIds", java.util.List.of());
+        send(HttpMethod.PUT, adminPath, payload, 200);
+        var cleared = publicGet(publicPath, 200);
+        assertEquals(0, cleared.get("tags").size());
+        assertEquals(publishedAt, cleared.get("publishedAt").asText());
+        assertTrue(containsId(publicGet("/api/tags", 200), first));
+        assertTrue(containsId(publicGet("/api/tags", 200), second));
+    }
     private long createCategory(String suffix) throws Exception {
         return send(HttpMethod.POST, "/api/admin/categories",
                 Map.of("name", prefix + suffix), 201).get("id").asLong();

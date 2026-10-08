@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,9 +16,12 @@ import java.util.Set;
 public class ArticleController {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ArticleTags articleTags;
 
-    public ArticleController(JdbcTemplate jdbcTemplate) {
+    public ArticleController(
+            JdbcTemplate jdbcTemplate, ArticleTags articleTags) {
         this.jdbcTemplate = jdbcTemplate;
+        this.articleTags = articleTags;
     }
 
     public record ArticleSummary(
@@ -27,7 +31,8 @@ public class ArticleController {
             String type,
             LocalDateTime publishedAt,
             Long categoryId,
-            String categoryName
+            String categoryName,
+            List<ArticleTags.TagItem> tags
     ) {}
 
     public record ArticleDetail(
@@ -38,10 +43,12 @@ public class ArticleController {
             String type,
             LocalDateTime publishedAt,
             Long categoryId,
-            String categoryName
+            String categoryName,
+            List<ArticleTags.TagItem> tags
     ) {}
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<ArticleSummary> list(
             @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "categoryId", required = false)
@@ -86,7 +93,7 @@ public class ArticleController {
         // 延续现有列表规则：显示满足筛选条件的最新 20 篇。
         sql += " ORDER BY a.published_at DESC, a.id DESC LIMIT 20";
 
-        return jdbcTemplate.query(
+        List<ArticleSummary> articles = jdbcTemplate.query(
                 sql,
                 (rs, rowNum) -> new ArticleSummary(
                         rs.getLong("id"),
@@ -95,13 +102,24 @@ public class ArticleController {
                         rs.getString("type"),
                         rs.getTimestamp("published_at").toLocalDateTime(),
                         rs.getObject("category_id", Long.class),
-                        rs.getString("category_name")
+                        rs.getString("category_name"),
+                        List.of() // 先读取文章，下一次查询批量读取标签。
                 ),
-                parameters.toArray()
-        );
+                parameters.toArray());
+
+        var tagsByArticle = articleTags.readFor(
+                articles.stream().map(ArticleSummary::id).toList());
+
+// record 是不可变对象，因此构造带有标签的新返回结果。
+        return articles.stream().map(a -> new ArticleSummary(
+                a.id(), a.title(), a.summary(), a.type(), a.publishedAt(),
+                a.categoryId(), a.categoryName(),
+                tagsByArticle.getOrDefault(a.id(), List.of())
+        )).toList();
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ArticleDetail detail(@PathVariable("id") long id) {
         String sql = """
                 SELECT a.id, a.title, a.summary, a.content_markdown,
@@ -122,7 +140,8 @@ public class ArticleController {
                         rs.getString("type"),
                         rs.getTimestamp("published_at").toLocalDateTime(),
                         rs.getObject("category_id", Long.class),
-                        rs.getString("category_name")
+                        rs.getString("category_name"),
+                        articleTags.read(id)
                 ),
                 id
         );

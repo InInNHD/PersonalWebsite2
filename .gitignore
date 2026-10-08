@@ -1,6 +1,9 @@
 # Local IDE files (all project modules)
 .idea/
 
+# Local acceptance screenshots
+/artifacts/
+
 # Local secrets and configuration
 .env
 .env.*

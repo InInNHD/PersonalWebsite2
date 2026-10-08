@@ -24,9 +24,13 @@ import java.util.List;
 public class AdminArticleController {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ArticleTags articleTags;
 
-    public AdminArticleController(JdbcTemplate jdbcTemplate) {
+    // Spring 会自动提供数据库操作对象和文章标签对象。
+    public AdminArticleController(
+            JdbcTemplate jdbcTemplate, ArticleTags articleTags) {
         this.jdbcTemplate = jdbcTemplate;
+        this.articleTags = articleTags;
     }
 
     //// 请求只包含文章内容，草稿状态和发布时间由后端决定。
@@ -45,7 +49,10 @@ public class AdminArticleController {
 
             // null 表示未分类；填写编号时必须大于 0。
             @Positive
-            Long categoryId
+            Long categoryId,
+            // 每篇最多选择 20 个标签；数组中的每个编号都必须非空且大于 0。
+            @Size(max = 20)
+            List<@NotNull @Positive Long> tagIds
     ) {}
 
     // 新建和发布都返回文章编号与当前状态。
@@ -94,6 +101,8 @@ public class AdminArticleController {
             throw new IllegalStateException("数据库未返回文章编号");
         }
 
+        // 保存刚创建的文章与所选标签之间的关联。
+        articleTags.replace(id.longValue(), request.tagIds());
         return new ArticleResult(id.longValue(), "DRAFT");
 
     }
@@ -142,7 +151,8 @@ public class AdminArticleController {
             String contentMarkdown,
             String type,
             String status,
-            Long categoryId
+            Long categoryId,
+            List<Long> tagIds
     ) {}
 
     @GetMapping
@@ -162,6 +172,7 @@ public class AdminArticleController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public AdminDetail detail(@PathVariable("id") long id) {
         String sql = """
         SELECT id, title, summary, content_markdown,
@@ -184,7 +195,10 @@ public class AdminArticleController {
                     rs.getString("status"),
 
                     // getObject 保留 SQL NULL；不能用 getLong 将其读成 0。
-                    rs.getObject("category_id", Long.class)
+                    rs.getObject("category_id", Long.class),
+                    articleTags.read(id).stream()
+                            .map(ArticleTags.TagItem::id)
+                            .toList()
             );
         }, id);
 
@@ -195,34 +209,36 @@ public class AdminArticleController {
         return article;
     }
 
-        @PutMapping(value = "/{id}", consumes = "application/json")
-        @Transactional
-        public AdminDetail update(
-        @PathVariable("id") long id,
-        @Valid @RequestBody DraftRequest request
-) {
-            checkCategory(request.categoryId());
+    @PutMapping(value = "/{id}", consumes = "application/json")
+    @Transactional
+    public AdminDetail update(
+            @PathVariable("id") long id,
+            @Valid @RequestBody DraftRequest request) {
 
-            // 保留文章状态和第一次发布时间，只更新内容与分类。
-            String sql = """
+        // 先确认文章存在；不存在时返回 404，避免插入无效关联。
+        detail(id);
+        checkCategory(request.categoryId());
+
+        String sql = """
             UPDATE article
             SET title = ?, summary = ?, content_markdown = ?,
                 type = ?, category_id = ?
             WHERE id = ?
             """;
 
-            jdbcTemplate.update(
-                    sql,
-                    request.title().strip(),
-                    request.summary().strip(),
-                    request.contentMarkdown(),
-                    request.type(),
-                    request.categoryId(),
-                    id
-            );
+        // 保存内容时保留文章状态和第一次发布时间。
+        jdbcTemplate.update(sql,
+                request.title().strip(),
+                request.summary().strip(),
+                request.contentMarkdown(),
+                request.type(),
+                request.categoryId(),
+                id);
 
-            return detail(id);
-        }
+        // 标签无效时抛出异常，刚才的文章内容更新也会回滚。
+        articleTags.replace(id, request.tagIds());
+        return detail(id);
+    }
 
     private void checkCategory(Long categoryId) {
         // 允许文章不设置分类。

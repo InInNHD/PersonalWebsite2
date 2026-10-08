@@ -104,6 +104,7 @@ test('后台登录、分类新增重名与改名、文章归类发布及恢复�
       if (path.endsWith('/csrf')) return response({ headerName: 'X-CSRF-TOKEN', token: 'fixture-token' })
       if (path.endsWith('/check')) return response({ ok: true })
       if (path.endsWith('/resources')) return response([])
+      if (path.endsWith('/tags') && method === 'GET') return response([])
       if (path.endsWith('/categories')) {
         if (method === 'GET') return response(categories)
         if (categories.some(c => c.name === body.name)) return response({}, 409)
@@ -161,4 +162,94 @@ test('后台登录、分类新增重名与改名、文章归类发布及恢复�
   assert.equal(app.form.categoryId, null)
   assert.equal(app.dirty.value, false)
   assert.equal(app.error.value, '')
+})
+
+test('标签新增、重名、改名、取消、空白校验及重新加载', async () => {
+  const stored = []
+  let input = ' Spring Boot '
+  let writes = 0
+  const app = component('AdminView.vue', 'editTag, loadTags, tags, error, message', async (path, options) => {
+    if (path.endsWith('/csrf')) return response({ headerName: 'X-CSRF-TOKEN', token: 'token' })
+    const method = options.method ?? 'GET'
+    if (method === 'GET') return response(stored)
+    assert.equal(options.headers.get('X-CSRF-TOKEN'), 'token')
+    const { name } = JSON.parse(options.body)
+    const id = method === 'POST' ? stored.length + 1 : Number(path.split('/').at(-1))
+    if (stored.some(item => item.name === name && item.id !== id) ||
+        (method === 'POST' && stored.some(item => item.name === name))) return response({}, 409)
+    writes++
+    const result = { id, name }
+    if (method === 'POST') stored.push(result)
+    else stored[stored.findIndex(item => item.id === id)] = result
+    return response(result, method === 'POST' ? 201 : 200)
+  }, { prompt: () => input })
+  await app.editTag()
+  assert.equal(app.tags.value[0].name, 'Spring Boot')
+  await app.editTag()
+  assert.match(app.error.value, /标签名称已存在/)
+  input = 'Spring Security'
+  await app.editTag(app.tags.value[0])
+  assert.equal(app.tags.value[0].id, 1)
+  assert.equal(app.tags.value[0].name, input)
+  await app.editTag(app.tags.value[0])
+  assert.equal(app.error.value, '')
+  const before = writes
+  input = null
+  await app.editTag()
+  input = '   '
+  await app.editTag()
+  assert.match(app.error.value, /1～50/)
+  input = 'x'.repeat(51)
+  await app.editTag()
+  assert.equal(writes, before)
+  app.tags.value = []
+  await app.loadTags()
+  assert.deepEqual(JSON.parse(JSON.stringify(app.tags.value)), stored)
+})
+
+test('文章标签发送、回显、清空、新建重置及保存失败保留修改', async () => {
+  let stored
+  let rejectSave = false
+  const app = component('AdminView.vue',
+    'form, save, openArticle, newArticle, fillForm, articleDirty, error',
+    async (path, options = {}) => {
+      if (path.endsWith('/csrf')) return response({ headerName: 'X-CSRF-TOKEN', token: 'tag-token' })
+      const method = options.method ?? 'GET'
+      if (method === 'GET') return response(path.endsWith('/articles') ? [stored] : stored)
+      assert.equal(options.headers.get('X-CSRF-TOKEN'), 'tag-token')
+      if (rejectSave) return response({}, 400)
+      const payload = JSON.parse(options.body)
+      assert.ok(payload.tagIds.every(Number.isInteger))
+      stored = { ...payload, id: 51, status: 'DRAFT' }
+      return response(stored, method === 'POST' ? 201 : 200)
+    }, { confirm: () => true })
+
+  Object.assign(app.form, { title: '标签文章', contentMarkdown: '# Body', tagIds: [11, 22] })
+  await app.save()
+  assert.deepEqual(stored.tagIds, [11, 22])
+  assert.equal(app.articleDirty.value, false)
+  await app.openArticle(51)
+  assert.deepEqual([...app.form.tagIds], [11, 22])
+
+  app.form.tagIds = [22]
+  assert.equal(app.articleDirty.value, true)
+  rejectSave = true
+  await app.save()
+  assert.deepEqual(stored.tagIds, [11, 22])
+  assert.deepEqual([...app.form.tagIds], [22])
+  assert.equal(app.articleDirty.value, true)
+  assert.match(app.error.value, /输入校验失败/)
+
+  rejectSave = false
+  app.form.tagIds = []
+  await app.save()
+  assert.deepEqual(stored.tagIds, [])
+  const source = { ...stored, tagIds: [11] }
+  app.fillForm(source)
+  app.form.tagIds.push(22)
+  assert.deepEqual(source.tagIds, [11])
+  app.newArticle()
+  assert.deepEqual([...app.form.tagIds], [])
+  assert.equal(app.form.id, null)
+  assert.equal(app.articleDirty.value, false)
 })

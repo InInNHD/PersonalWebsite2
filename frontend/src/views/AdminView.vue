@@ -22,6 +22,7 @@ function emptyArticle() {
     type: 'NOTE',
     status: 'DRAFT',
     categoryId: null,
+    tagIds: [], // 保存标签编号；复选框会向这个数组添加或移除编号。
   }
 }
 
@@ -62,7 +63,10 @@ const markdown = new MarkdownIt({ html: false, linkify: true })
 const preview = computed(() => markdown.render(form.contentMarkdown))
 
 function fillForm(article) {
-  Object.assign(form, article)
+  Object.assign(form, emptyArticle(), article)
+
+  // 复制数组，让编辑表单拥有自己的标签选择。
+  form.tagIds = [...(article.tagIds ?? [])]
   savedSnapshot.value = JSON.stringify(form)
 }
 
@@ -102,7 +106,9 @@ if(!response.ok) {
     401: '管理员认证失败，请检查密码；若密码已变更，请重新登录。',
     403: '安全校验失败，请重试；若仍失败，请检查后端日志。',
     404: '记录不存在，请刷新列表。',
-    409: '分类名称已存在，请换一个名称。',
+    409: path.startsWith('/tags')
+        ? '标签名称已存在，请换一个名称。'
+        : '分类名称已存在，请换一个名称。',
   }
   throw new Error(descriptions[response.status] ?? `请求失败: HTTP ${response.status}`)
 }
@@ -140,6 +146,7 @@ async function connect() {
     await loadList()
     await loadResources()
     await loadCategories()
+    await loadTags()
     connected.value = true
     password.value = ''
   })
@@ -175,6 +182,7 @@ async function persist() {
           contentMarkdown: form.contentMarkdown,
           type: form.type,
           categoryId: form.categoryId,
+          tagIds: [...form.tagIds],
         }),
       }
   )
@@ -342,6 +350,49 @@ async function editCategory(category = null) {
     message.value = category ? '分类名称已更新。' : '分类已创建。'
   })
 }
+
+const tags = ref([])
+
+async function loadTags() {
+  tags.value = await request('/tags')
+}
+
+async function editTag(tag = null) {
+  if (busy.value) return
+
+  const input = window.prompt(
+      tag ? '修改标签名称' : '输入新标签名称',
+      tag?.name ?? ''
+  )
+
+  // 点击取消时保留当前状态。
+  if (input === null) return
+
+  await run(async () => {
+    const name = input.trim()
+
+    if (!name || name.length > 50) {
+      throw new Error('标签名称需要包含 1～50 个字符。')
+    }
+
+    const result = await request(
+        tag ? `/tags/${tag.id}` : '/tags',
+        {
+          method: tag ? 'PUT' : 'POST',
+          body: JSON.stringify({ name }),
+        }
+    )
+
+    // 用后端返回的数据更新列表。
+    // 重命名保留原编号，新增则增加一条记录。
+    tags.value = [
+      ...tags.value.filter(item => item.id !== result.id),
+      result,
+    ].sort((a, b) => a.id - b.id)
+
+    message.value = tag ? '标签名称已更新。' : '标签已创建。'
+  })
+}
 </script>
 
 <template>
@@ -391,6 +442,36 @@ async function editCategory(category = null) {
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <p v-if="message" role="status">{{ message }}</p>
       </section>
+
+      <section class="tag-admin">
+        <h2>标签管理</h2>
+
+        <button type="button" @click="editTag()">
+          新增标签
+        </button>
+
+        <p v-if="tags.length === 0">
+          暂时没有标签，可以先创建“Spring Boot”或“学习记录”。
+        </p>
+
+        <ul>
+          <li v-for="tag in tags" :key="tag.id">
+            <button type="button" @click="editTag(tag)">
+              {{ tag.name }} · 重命名
+            </button>
+          </li>
+        </ul>
+
+        <!-- 操作反馈放在标签管理区附近。 -->
+        <p v-if="error" class="error" role="alert">
+          {{ error }}
+        </p>
+
+        <p v-if="message" role="status">
+          {{ message }}
+        </p>
+      </section>
+
       <div class="toolbar">
         <button type="button" @click="newArticle">新建文章</button>
         <span v-if="busy">正在处理…</span>
@@ -455,6 +536,31 @@ async function editCategory(category = null) {
               </option>
             </select>
           </label>
+
+          <div class="article-tag-picker" role="group" aria-labelledby="article-tags-label">
+            <p id="article-tags-label">
+              文章标签（可选，最多 20 个）
+            </p>
+
+            <p v-if="tags.length === 0">
+              暂时没有标签，请先在上方的标签管理中创建。
+            </p>
+
+            <div class="tag-options">
+              <label v-for="tag in tags" :key="tag.id" class="tag-option">
+                <!-- :value 绑定数字编号；不带冒号会变成字符串。 -->
+                <input
+                    v-model="form.tagIds"
+                    type="checkbox"
+                    :value="tag.id"
+                    :disabled="form.tagIds.length >= 20 && !form.tagIds.includes(tag.id)"
+                />
+                <span>{{ tag.name }}</span>
+              </label>
+            </div>
+
+            <p>已选 {{ form.tagIds.length }} 个；全部取消后保存即可清空标签。</p>
+          </div>
 
           <label>
             摘要
@@ -629,9 +735,16 @@ small { display: block; margin-top: 6px; color: #607078; }
 .toolbar {
   flex-wrap: wrap;
 }
-.category-admin {
+.category-admin,
+.tag-admin {
   padding-bottom: 24px;
   margin-bottom: 24px;
   border-bottom: 1px solid #dce2e6;
 }
+
+.article-tag-picker { margin-bottom: 16px; }
+.tag-options { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.tag-option { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+.tag-option input { width: auto; margin: 0; padding: 0; }
+
 </style>

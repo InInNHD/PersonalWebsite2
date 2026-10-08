@@ -170,6 +170,11 @@ onMounted(loadArticles)
         <p>{{ article.categoryName ?? '未分类' }}</p>
         <h2>{{ article.title }}</h2>
         <p>{{ article.summary }}</p>
+        <div v-if="article.tags?.length" class="article-tags" aria-label="文章标签">
+  <span v-for="tag in article.tags" :key="tag.id" class="tag-badge">
+    #{{ tag.name }}
+  </span>
+        </div>
         <span>阅读全文 →</span>
       </RouterLink>
     </div>

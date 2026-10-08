@@ -78,6 +78,11 @@ watch(() => route.params.id, loadArticle, { immediate: true })
         <h1>{{ article.title }}</h1>
         <p>分类：{{ article.categoryName ?? '未分类' }}</p>
         <p>{{ article.summary }}</p>
+        <div v-if="article.tags?.length" class="article-tags" aria-label="文章标签">
+  <span v-for="tag in article.tags" :key="tag.id" class="tag-badge">
+    #{{ tag.name }}
+  </span>
+        </div>
       </header>
 
       <!-- Markdown 转换后的内容；解析器已关闭原始 HTML。 -->
