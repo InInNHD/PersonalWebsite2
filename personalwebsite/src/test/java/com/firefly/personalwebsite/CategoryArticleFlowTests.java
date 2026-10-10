@@ -121,7 +121,7 @@ class CategoryArticleFlowTests {
         assertTrue(cleared.get("categoryId").isNull());
         assertTrue(cleared.get("categoryName").isNull());
         assertEquals(timestamp, cleared.get("publishedAt").asText());
-        assertTrue(containsId(publicGet("/api/articles", 200), id));
+        assertTrue(containsId(publicGet("/api/articles?keyword=" + prefix, 200), id));
         assertFalse(containsId(publicGet("/api/articles?categoryId=" + second, 200), id));
         send(HttpMethod.POST, adminPath + "/publish", null, 200);
         assertEquals(timestamp, publicGet(publicPath, 200).get("publishedAt").asText());
@@ -213,7 +213,7 @@ class CategoryArticleFlowTests {
         assertEquals(first, published.get("tags").get(0).get("id").asLong());
         String publishedAt = published.get("publishedAt").asText();
 
-        var list = publicGet("/api/articles", 200);
+        var list = publicGet("/api/articles?keyword=" + prefix, 200);
         boolean found = false;
         for (var item : list) {
             if (item.get("id").asLong() == id) {
@@ -310,6 +310,100 @@ class CategoryArticleFlowTests {
         publicGet("/api/articles?tagId=-1", 400);
         publicGet("/api/articles?tagId=invalid", 400);
     }
+@Test
+void articleSearchPaginationAndValidation() throws Exception {
+    long category = createCategory("-search");
+    long tag = send(HttpMethod.POST, "/api/admin/tags",
+            Map.of("name", prefix + "-search"), 201).get("id").asLong();
+    var ids = new java.util.ArrayList<Long>();
+
+    // 共 23 篇：第一页 10 篇，第二页 10 篇，第三页 3 篇。
+    for (int i = 0; i < 23; i++) {
+        var payload = article(category);
+        // 只有第一篇标题含关键词；其余依靠摘要匹配。
+        payload.put("title", i == 0 ? prefix + "-needle" : prefix + "-plain-" + i);
+        payload.put("summary", i == 0 ? "没有关键词" : prefix + "-needle");
+        payload.put("tagIds", java.util.List.of(tag));
+        long id = send(HttpMethod.POST, "/api/admin/articles", payload, 201).get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + id + "/publish", null, 200);
+        ids.add(id);
+    }
+
+    // 固定相同发布时间，验证第二排序键 id 以及跨页不重复。
+    for (long id : ids) {
+        jdbc.update("UPDATE article SET published_at = '2026-01-01 12:00:00' WHERE id = ?", id);
+    }
+    var draftPayload = article(category);
+    draftPayload.put("title", prefix + "-needle-draft");
+    draftPayload.put("tagIds", java.util.List.of(tag));
+    long draft = send(HttpMethod.POST, "/api/admin/articles", draftPayload, 201).get("id").asLong();
+
+    String base = "/api/articles?type=NOTE&categoryId=" + category
+            + "&tagId=" + tag + "&keyword=" + prefix + "-needle";
+    var first = publicResponse(base, 200); // 默认 page=1、size=10。
+    assertEquals(23, first.get("total").asLong());
+    assertEquals(1, first.get("page").asInt());
+    assertEquals(10, first.get("size").asInt());
+    assertEquals(3, first.get("totalPages").asLong());
+    assertEquals(10, first.get("items").size());
+    assertFalse(containsId(first.get("items"), draft));
+    assertEquals(tag, first.get("items").get(0).get("tags").get(0).get("id").asLong());
+    var second = publicResponse(base + "&page=2", 200);
+    var third = publicResponse(base + "&page=3", 200);
+    assertEquals(10, second.get("items").size());
+    assertEquals(3, third.get("items").size());
+    // 三页合起来必须正好是预期的 23 篇，按编号从大到小排列。
+    var actualIds = new java.util.ArrayList<Long>();
+    for (var result : java.util.List.of(first, second, third)) {
+        for (var item : result.get("items")) actualIds.add(item.get("id").asLong());
+    }
+    var expectedIds = new java.util.ArrayList<>(ids);
+    java.util.Collections.reverse(expectedIds);
+    assertEquals(expectedIds, actualIds);
+
+    var beyond = publicResponse(base + "&page=999", 200);
+    assertEquals(3, beyond.get("page").asInt());
+    assertEquals(third.get("items"), beyond.get("items"));
+    var empty = publicResponse(base + "-missing", 200);
+    assertEquals(0, empty.get("total").asLong());
+    assertEquals(0, empty.get("totalPages").asLong());
+    assertEquals(1, empty.get("page").asInt());
+    assertEquals(0, empty.get("items").size());
+    var small = publicResponse(base + "&size=1&page=2", 200);
+    assertEquals(23, small.get("totalPages").asLong());
+    assertEquals(ids.get(21).longValue(), small.get("items").get(0).get("id").asLong());
+    var blank = publicResponse("/api/articles?categoryId=" + category + "&keyword=%20%20", 200);
+    assertEquals(23, blank.get("total").asLong());
+
+    for (String invalid : java.util.List.of(
+            "page=0", "page=-1", "page=1000001", "page=invalid",
+            "size=0", "size=-1", "size=51", "size=invalid")) {
+        publicResponse("/api/articles?" + invalid, 400);
+    }
+    publicResponse("/api/articles?keyword=" + "a".repeat(101), 400);
+}
+
+@Test
+void searchTreatsSymbolsLiterallyAndDoesNotSearchBody() throws Exception {
+    long category = createCategory("-literal");
+    for (String title : java.util.List.of(prefix + "100%", prefix + "under_score",
+            prefix + "bang!", prefix + "plain")) {
+        var payload = article(category);
+        payload.put("title", title);
+        payload.put("summary", "没有搜索符号");
+        payload.put("contentMarkdown", prefix + "-body-only");
+        long id = send(HttpMethod.POST, "/api/admin/articles", payload, 201).get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + id + "/publish", null, 200);
+    }
+    String base = "/api/articles?categoryId=" + category + "&keyword=";
+    // URL 编码的 %、_、!，只应命中包含对应字符的那一篇。
+    for (String symbol : java.util.List.of("%25", "_", "%21")) {
+        assertEquals(1, publicResponse(base + symbol, 200).get("total").asLong());
+    }
+    assertEquals(0, publicResponse(base + prefix + "-body-only", 200).get("total").asLong());
+    assertEquals(0, publicResponse(base + "%27%20OR%201%3D1%20--", 200).get("total").asLong());
+}
+
     private long createCategory(String suffix) throws Exception {
         return send(HttpMethod.POST, "/api/admin/categories",
                 Map.of("name", prefix + suffix), 201).get("id").asLong();
@@ -338,11 +432,26 @@ class CategoryArticleFlowTests {
         return content.isBlank() ? null : json.readTree(content);
     }
 
-    private JsonNode publicGet(String path, int expected) throws Exception {
-        var result = mvc.perform(get(path)).andExpect(status().is(expected)).andReturn();
-        String content = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-        return content.isBlank() ? null : json.readTree(content);
+// 统一读取实际接口响应，分页测试需要访问整个对象。
+private JsonNode publicResponse(String path, int expected) throws Exception {
+    // URI 重载接受已经编码的查询字符，避免 %25 被再次编码。
+    var result = mvc.perform(get(java.net.URI.create(path)))
+            .andExpect(status().is(expected)).andReturn();
+    String content = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+    return content.isBlank() ? null : json.readTree(content);
+}
+
+// 保留旧流程测试读取数组的语义，仅为公开文章列表取出 items。
+// 详情、分类、标签与错误响应均原样返回。
+private JsonNode publicGet(String path, int expected) throws Exception {
+    var body = publicResponse(path, expected);
+    if (expected == 200 && body != null
+            && (path.equals("/api/articles") || path.startsWith("/api/articles?"))) {
+        assertTrue(body.get("items").isArray());
+        return body.get("items");
     }
+    return body;
+}
 
     private boolean containsId(JsonNode rows, long id) {
         for (var row : rows) if (row.get("id").asLong() == id) return true;

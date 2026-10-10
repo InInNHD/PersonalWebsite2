@@ -28,59 +28,126 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
-test('栏目分类标签同时传入，旧筛选结果不能覆盖最新列表', async () => {
+// 本轮列表响应为分页对象，详情与管理员响应仍使用原 response()。
+function articlePage(items, total = items.length, page = 1, size = 10) {
+  return response({ items, total, page, size, totalPages: Math.ceil(total / size) })
+}
+
+test('搜索与全部筛选同时传入，旧结果不能覆盖列表和分页信息', async () => {
   const pending = []
   const app = component('ArticleListView.vue',
-      'loadArticles, type, categoryId, tagId, articles, error, loading', url => {
-        const item = { url, ...deferred() }
-        pending.push(item)
-        return item.promise
-      })
-
+    'loadArticles, type, categoryId, tagId, keyword, page, articles, total, totalPages, error, loading', url => {
+      const item = { url, ...deferred() }
+      pending.push(item)
+      return item.promise
+    })
   app.type.value = 'NOTE'
   app.categoryId.value = 11
   app.tagId.value = 101
+  app.keyword.value = 'Java 学习'
+  app.page.value = 2
   const first = app.loadArticles()
   app.tagId.value = 202
+  app.page.value = 1
   const second = app.loadArticles()
-
-  assert.equal(pending[0].url, '/api/articles?type=NOTE&categoryId=11&tagId=101')
-  assert.equal(pending[1].url, '/api/articles?type=NOTE&categoryId=11&tagId=202')
-
-  pending[1].resolve(response([{ id: 2, tags: [{ id: 202, name: '当前标签' }] }]))
+  const query = new URL(pending[0].url, 'http://localhost').searchParams
+  assert.equal(query.get('type'), 'NOTE')
+  assert.equal(query.get('categoryId'), '11')
+  assert.equal(query.get('tagId'), '101')
+  assert.equal(query.get('keyword'), 'Java 学习')
+  assert.equal(query.get('page'), '2')
+  assert.equal(query.get('size'), '10')
+  pending[1].resolve(articlePage([{ id: 2, tags: [{ id: 202 }] }], 11, 1))
   await second
-  pending[0].resolve(response([{ id: 1, tags: [{ id: 101, name: '旧标签' }] }]))
+  pending[0].resolve(articlePage([{ id: 1 }], 99, 2))
   await first
-
   assert.equal(app.articles.value[0].id, 2)
   assert.equal(app.articles.value[0].tags[0].id, 202)
+  assert.equal(app.total.value, 11)
+  assert.equal(app.totalPages.value, 2)
+  assert.equal(app.page.value, 1)
   assert.equal(app.error.value, '')
   assert.equal(app.loading.value, false)
 
   app.tagId.value = ''
   const allTags = app.loadArticles()
-  assert.equal(pending[2].url, '/api/articles?type=NOTE&categoryId=11')
-  pending[2].resolve(response([]))
+  const cleared = new URL(pending[2].url, 'http://localhost').searchParams
+  assert.equal(cleared.has('tagId'), false)
+  assert.equal(cleared.get('keyword'), 'Java 学习')
+  pending[2].resolve(articlePage([]))
   await allTags
 })
 
-test('旧请求结束不关闭新请求加载状态，失败也不覆盖新结果', async () => {
+test('旧失败不影响新请求，新失败清理分页，卸载不再接受结果', async () => {
   const pending = []
-  const app = component('ArticleListView.vue', 'loadArticles, articles, error, loading', () => {
-    const item = deferred()
-    pending.push(item)
-    return item.promise
-  })
+  const app = component('ArticleListView.vue',
+    'loadArticles, articles, total, totalPages, error, loading', () => {
+      const item = deferred()
+      pending.push(item)
+      return item.promise
+    })
   const first = app.loadArticles()
   const second = app.loadArticles()
   pending[0].reject(new Error('obsolete failure'))
   await first
   assert.equal(app.loading.value, true)
   assert.equal(app.error.value, '')
-  pending[1].resolve(response([{ id: 2 }]))
+  pending[1].resolve(articlePage([{ id: 2 }], 21))
   await second
-  assert.equal(app.articles.value[0].id, 2)
-  assert.equal(app.loading.value, false)
+  assert.equal(app.totalPages.value, 3)
+  const failed = app.loadArticles()
+  pending[2].reject(new Error('network failed'))
+  await failed
+  assert.equal(app.error.value, 'network failed')
+  assert.deepEqual(app.articles.value, [])
+  assert.equal(app.total.value, 0)
+  assert.equal(app.totalPages.value, 0)
+  const leaving = app.loadArticles()
+  app.unmount()
+  pending[3].resolve(articlePage([{ id: 99 }], 99))
+  await leaving
+  assert.deepEqual(app.articles.value, [])
+  assert.equal(app.total.value, 0)
+})
+
+test('搜索提交与清空回第一页，翻页保留已提交关键词，条件变化也重置页码', async () => {
+  const urls = []
+  const app = component('ArticleListView.vue',
+    'searchArticles, clearSearch, applyFilters, changePage, keywordInput, keyword, page, categoryId, loading, totalPages',
+    async url => {
+      urls.push(url)
+      const requested = Number(new URL(url, 'http://localhost').searchParams.get('page'))
+      // 模拟文章减少后，后端把第三页纠正为第二页。
+      return articlePage([{ id: 1 }], 11, Math.min(requested, 2))
+    })
+  app.page.value = 3
+  app.keywordInput.value = '  Java  '
+  await app.searchArticles()
+  assert.equal(app.page.value, 1)
+  assert.equal(app.keyword.value, 'Java')
+  app.keywordInput.value = '尚未提交的新文字'
+  await app.changePage(2)
+  assert.equal(app.page.value, 2)
+  assert.equal(new URL(urls.at(-1), 'http://localhost').searchParams.get('keyword'), 'Java')
+  const before = urls.length
+  await app.changePage(0)
+  await app.changePage(3)
+  app.loading.value = true
+  await app.changePage(1)
+  app.loading.value = false
+  assert.equal(urls.length, before)
+  app.totalPages.value = 3
+  await app.changePage(3)
+  assert.equal(app.page.value, 2) // 接受后端返回的实际页码。
+  app.categoryId.value = 11
+  await app.applyFilters()
+  assert.equal(app.page.value, 1)
+  assert.equal(new URL(urls.at(-1), 'http://localhost').searchParams.get('categoryId'), '11')
+  await app.clearSearch()
+  assert.equal(app.keyword.value, '')
+  assert.equal(app.keywordInput.value, '')
+  assert.equal(app.page.value, 1)
+  assert.equal(new URL(urls.at(-1), 'http://localhost').searchParams.has('keyword'), false)
 })
 
 test('详情的旧正文和分类不会覆盖新文章', async () => {

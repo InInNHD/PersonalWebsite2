@@ -1,6 +1,6 @@
 # PersonalWebsite2
 
-个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类、文章多标签及栏目＋分类＋标签组合筛选。
+个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类、文章多标签、组合筛选、标题/摘要搜索及文章分页。
 
 ## 项目结构
 
@@ -8,6 +8,10 @@
 - `personalwebsite/`：后端应用及真实 MySQL 接口测试。
 - `database/`：按编号执行的数据库初始化与升级脚本。
 - `docs/`：手敲指南和项目进度。`05-tag-filter.md` 对应的标签筛选已完成，自动化测试通过。
+
+第六轮指南：`docs/06-article-search-pagination.md`，标题/摘要搜索和文章分页已完成，自动化测试及浏览器操作验收通过。下一阶段为文章归档。
+
+公开文章列表 `/api/articles` 现在返回分页对象：`items`、`total`、`page`、`size`、`totalPages`；默认第一页、每页 10 篇。升级时需同步前后端，旧数组解析方式不再适用。详情及管理员文章接口的返回格式不变。
 
 ## 环境准备
 
@@ -117,4 +121,4 @@ cd E:\PersonalWebsite2\personalwebsite
 
 后端流程测试连接真实 MySQL，需要完整的五张表。测试中的写入通过事务回滚，MySQL 自增编号仍可能前进；建议使用独立测试数据库。`CategoryArticleFlowTests` 使用的固定密码仅属于测试上下文。
 
-最新版本验证记录见 `docs/RELEASE-v0.4.0.md`，此前版本见 `docs/RELEASE-v0.3.0.md`。Release 提供源码下载，运行时仍需自行准备环境和数据库。
+最新 `v0.5.0` 预发布版本说明和验收记录见 `docs/RELEASE-v0.5.0.md`；历史版本记录见 `docs/RELEASE-v0.4.0.md` 和 `docs/RELEASE-v0.3.0.md`。Release 提供源码下载，运行时仍需自行准备环境和数据库。
