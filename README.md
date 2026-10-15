@@ -1,6 +1,6 @@
 # PersonalWebsite2
 
-个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类、文章多标签、组合筛选、标题/摘要搜索及文章分页。
+个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类、文章多标签、组合筛选、标题/摘要搜索、文章分页、按年月归档、关于页及首页个人简介。
 
 ## 项目结构
 
@@ -9,7 +9,11 @@
 - `database/`：按编号执行的数据库初始化与升级脚本。
 - `docs/`：手敲指南和项目进度。`05-tag-filter.md` 对应的标签筛选已完成，自动化测试通过。
 
-第六轮指南：`docs/06-article-search-pagination.md`，标题/摘要搜索和文章分页已完成，自动化测试及浏览器操作验收通过。下一阶段为文章归档。
+第六轮搜索分页、第七轮文章归档及第八轮关于页与首页简介均已完成并验收。手敲指南见 `docs/06-article-search-pagination.md`、`docs/07-article-archive.md` 和 `docs/08-about-profile.md`；第八轮记录见 `docs/ABOUT-PROFILE-ACCEPTANCE.md`。个人文案集中在 `frontend/src/siteProfile.js`，本轮纳入 v0.6.0 预发布版本。
+
+第九轮暗色技术风格及移动端布局已完成并验收：实际前端 9 项回归测试、生产构建，以及桌面、平板和手机视口的浏览器检查均通过；独立 MySQL 中的手机写作发布和资源保存流程通过。手敲指南见 `docs/09-site-style-mobile.md`，验收记录见 `docs/STYLE-MOBILE-ACCEPTANCE.md`。下一阶段为备份恢复演练。
+
+归档页路径为 `/archive`；公开接口 `/api/articles/archive` 返回月份及文章数，列表接口支持可选的 `month=YYYY-MM` 参数。归档只包含已发布文章，以首次发布时间归属年月。
 
 公开文章列表 `/api/articles` 现在返回分页对象：`items`、`total`、`page`、`size`、`totalPages`；默认第一页、每页 10 篇。升级时需同步前后端，旧数组解析方式不再适用。详情及管理员文章接口的返回格式不变。
 
@@ -121,4 +125,4 @@ cd E:\PersonalWebsite2\personalwebsite
 
 后端流程测试连接真实 MySQL，需要完整的五张表。测试中的写入通过事务回滚，MySQL 自增编号仍可能前进；建议使用独立测试数据库。`CategoryArticleFlowTests` 使用的固定密码仅属于测试上下文。
 
-最新 `v0.5.0` 预发布版本说明和验收记录见 `docs/RELEASE-v0.5.0.md`；历史版本记录见 `docs/RELEASE-v0.4.0.md` 和 `docs/RELEASE-v0.3.0.md`。Release 提供源码下载，运行时仍需自行准备环境和数据库。
+最新 `v0.6.0` 预发布版本包含文章归档、关于页、首页简介和暗色响应式布局，发布说明见 `docs/RELEASE-v0.6.0.md`；此前版本记录见 `docs/RELEASE-v0.5.0.md`。Release 提供源码下载，运行时仍需自行准备环境和数据库。从 v0.5.0 升级无需新增数据库迁移，更新前后端并重启即可。

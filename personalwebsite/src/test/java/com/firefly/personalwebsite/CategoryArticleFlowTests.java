@@ -404,6 +404,74 @@ void searchTreatsSymbolsLiterallyAndDoesNotSearchBody() throws Exception {
     assertEquals(0, publicResponse(base + "%27%20OR%201%3D1%20--", 200).get("total").asLong());
 }
 
+    @Test
+    void archiveCatalogMonthBoundariesDraftIsolationAndPaging() throws Exception {
+        // 先记录真实库已有目录，新增测试内容只检查数量增量。
+        var before = publicResponse("/api/articles/archive", 200);
+        var baseline = new java.util.HashMap<String, Long>();
+        for (var item : before) baseline.put(item.get("month").asText(), item.get("total").asLong());
+        long category = createCategory("-archive");
+        var februaryIds = new java.util.ArrayList<Long>();
+        for (int i = 0; i < 12; i++) {
+            long id = send(HttpMethod.POST, "/api/admin/articles", article(category), 201).get("id").asLong();
+            send(HttpMethod.POST, "/api/admin/articles/" + id + "/publish", null, 200);
+            // 2040 是闰年，覆盖月初和闰日最后一秒。
+            jdbc.update("UPDATE article SET published_at = ? WHERE id = ?",
+                    i == 0 ? "2040-02-01 00:00:00" : "2040-02-29 23:59:59", id);
+            februaryIds.add(id);
+        }
+        long marchId = send(HttpMethod.POST, "/api/admin/articles", article(category), 201).get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + marchId + "/publish", null, 200);
+        jdbc.update("UPDATE article SET published_at = '2040-03-01 00:00:00' WHERE id = ?", marchId);
+        long previousYear = send(HttpMethod.POST, "/api/admin/articles", article(category), 201).get("id").asLong();
+        send(HttpMethod.POST, "/api/admin/articles/" + previousYear + "/publish", null, 200);
+        jdbc.update("UPDATE article SET published_at = '2039-12-31 23:59:59' WHERE id = ?", previousYear);
+        long draft = send(HttpMethod.POST, "/api/admin/articles", article(category), 201).get("id").asLong();
+        // 即使草稿存在日期，也必须按 status 隔离。
+        jdbc.update("UPDATE article SET published_at = '2042-01-01 00:00:00' WHERE id = ?", draft);
+
+        var archive = publicResponse("/api/articles/archive", 200);
+        var counts = new java.util.HashMap<String, Long>();
+        String previous = null;
+        for (var item : archive) {
+            String month = item.get("month").asText();
+            assertTrue(month.matches("[1-9][0-9]{3}-(0[1-9]|1[0-2])"));
+            if (previous != null) assertTrue(previous.compareTo(month) > 0);
+            assertNull(counts.put(month, item.get("total").asLong()));
+            previous = month;
+        }
+        assertEquals(baseline.getOrDefault("2040-02", 0L) + 12, counts.get("2040-02").longValue());
+        assertEquals(baseline.getOrDefault("2040-03", 0L) + 1, counts.get("2040-03").longValue());
+        assertEquals(baseline.getOrDefault("2039-12", 0L) + 1, counts.get("2039-12").longValue());
+        assertEquals(baseline.get("2042-01"), counts.get("2042-01"));
+        String base = "/api/articles?month=2040-02&categoryId=" + category + "&type=NOTE&keyword=" + prefix;
+        var first = publicResponse(base, 200);
+        var second = publicResponse(base + "&page=2", 200);
+        assertEquals(12, first.get("total").asLong());
+        assertEquals(2, first.get("totalPages").asLong());
+        assertEquals(10, first.get("items").size());
+        assertEquals(2, second.get("items").size());
+        var actualIds = new java.util.HashSet<Long>();
+        for (var result : java.util.List.of(first, second)) {
+            for (var item : result.get("items")) {
+                assertTrue(item.get("publishedAt").asText().startsWith("2040-02"));
+                assertTrue(actualIds.add(item.get("id").asLong()));
+            }
+        }
+        assertEquals(new java.util.HashSet<>(februaryIds), actualIds);
+        var march = publicResponse("/api/articles?month=2040-03&categoryId=" + category, 200);
+        assertEquals(1, march.get("total").asLong());
+        assertEquals(marchId, march.get("items").get(0).get("id").asLong());
+        assertEquals(0, publicResponse("/api/articles?month=2042-01&categoryId=" + category, 200).get("total").asLong());
+        publicResponse("/api/articles/" + draft, 404);
+        assertEquals(2, publicResponse(base + "&page=999", 200).get("page").asInt());
+        for (String invalid : java.util.List.of("", "2040-2", "2040-00", "2040-13", "0000-01", "invalid")) {
+            publicResponse("/api/articles?month=" + invalid, 400);
+        }
+        publicResponse("/api/articles?month=1000-01", 200);
+        publicResponse("/api/articles?month=9999-12", 200);
+    }
+
     private long createCategory(String suffix) throws Exception {
         return send(HttpMethod.POST, "/api/admin/categories",
                 Map.of("name", prefix + suffix), 201).get("id").asLong();

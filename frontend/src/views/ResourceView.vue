@@ -118,18 +118,16 @@ onMounted(loadResources)
 </template>
 
 <style scoped>
-.resource-card {
-  /* 长名称或连续字符可以换行，避免撑破手机页面。 */
-  overflow-wrap: anywhere;
-}
-
+.resource-card { overflow-wrap: anywhere; }
 .resource-card a {
-  color: #216187;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  max-width: 100%;
+  color: var(--color-accent);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-
-.resource-card .invalid-link {
-  color: #b42318;
-}
+.resource-card .invalid-link { color: var(--color-error); }
 </style>
+```

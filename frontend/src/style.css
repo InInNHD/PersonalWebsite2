@@ -1,119 +1,244 @@
 :root {
-  font-family: Arial, "Microsoft YaHei", sans-serif;
-  color: #263238;
-  background: #f7f8fa;
+  /* 告诉浏览器：原生下拉框、输入控件和滚动条使用暗色外观。 */
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+
+  /* CSS 变量可以跨组件使用；以后调整配色只需改这里。 */
+  --color-bg: #0b1120;
+  --color-surface: #131e30;
+  --color-surface-raised: #1b2a40;
+  --color-border: #334155;
+  --color-text: #e5edf6;
+  --color-muted: #aab8cc;
+  --color-accent: #7dd3fc;
+  --color-accent-soft: #132b3d;
+  --color-error: #fda4af;
+  --color-input: #0b1424;
+  --color-code: #080e1a;
+  --radius-card: 12px;
+
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 
+/* padding 和 border 都计入元素宽度，避免 100% 的输入框撑出容器。 */
 * { box-sizing: border-box; }
-
 body { margin: 0; }
+h1, h2, h3 { line-height: 1.35; overflow-wrap: anywhere; }
+p { overflow-wrap: anywhere; }
+small { color: var(--color-muted); }
 
-a { color: inherit; text-decoration: none; }
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Tab 键移动到控件时有明确边框；保留浏览器的键盘操作方式。 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+label { min-width: 0; }
+
+/* 复选框另设尺寸，避免跟着文本框变成整行宽度。 */
+input:not([type="checkbox"]), select, textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-input);
+}
+
+input::placeholder, textarea::placeholder { color: var(--color-muted); }
+textarea { resize: vertical; }
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+button {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-raised);
+  font-weight: 600;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+button:hover:not(:disabled) { border-color: var(--color-accent); }
+button[type="submit"], .login button {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+button:disabled { cursor: not-allowed; opacity: 0.55; }
+input:disabled, select:disabled, textarea:disabled { opacity: 0.65; }
 
 .site { min-height: 100vh; display: flex; flex-direction: column; }
-
 .site-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 20px max(24px, calc((100vw - 960px) / 2));
-  background: white;
-  border-bottom: 1px solid #e5e9ec;
+  gap: 16px;
+  padding: 20px max(24px, calc((100% - 1040px) / 2));
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.brand { min-width: 0; color: var(--color-text); font-size: 20px; font-weight: 700; }
+.site-header nav { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.site-header nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+.site-header nav a:hover { background: var(--color-surface-raised); color: var(--color-text); }
+
+/* Vue Router 自带的精确匹配类，直接用来标记当前导航。 */
+.site-header nav a.router-link-exact-active {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
-.brand { font-weight: 700; font-size: 20px; }
-
 .container {
-  width: min(960px, calc(100% - 40px));
+  width: min(1040px, calc(100% - 48px));
+  min-width: 0;
   margin: 48px auto;
   flex: 1;
 }
-
 .page-heading {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: end;
   gap: 24px;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
-
-.page-heading h1, .article-header h1 { margin-bottom: 8px; }
-
-.page-heading p, .article-header p, .article-card p {
-  color: #607078;
-  line-height: 1.7;
-}
-
-select {
-  display: block;
-  margin-top: 8px;
-  padding: 8px;
-}
+.page-heading > * { min-width: 0; }
+.page-heading h1, .article-header h1 { margin: 0 0 12px; font-size: clamp(1.7rem, 4vw, 2.25rem); }
+.page-heading p, .article-header p, .article-card p { color: var(--color-muted); line-height: 1.8; }
+.page-heading p { margin-bottom: 0; }
 
 .article-grid { display: grid; gap: 16px; }
-
 .article-card {
   display: block;
-  padding: 24px;
-  background: white;
-  border: 1px solid #e5e9ec;
-  border-radius: 12px;
-}
-
-.article-card:hover { border-color: #6089a3; }
-.article-card h2 { margin: 10px 0; }
-.article-card span, .back-link { color: #216187; }
-.error { color: #b42318; }
-
-.article-header {
-  padding-bottom: 24px;
-  border-bottom: 1px solid #dce2e6;
-}
-
-.markdown-body {
-  line-height: 1.85;
+  min-width: 0;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text);
   overflow-wrap: anywhere;
 }
+a.article-card:hover { border-color: var(--color-accent); text-decoration: none; }
+.article-card h2 { margin: 10px 0; font-size: 1.3rem; }
+.article-card > span, .back-link { color: var(--color-accent); }
+.back-link { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 20px; }
+.error { color: var(--color-error); }
 
-.markdown-body pre {
-  padding: 16px;
-  overflow-x: auto;
-  background: #e9eef2;
-  border-radius: 8px;
-}
-
-.markdown-body img { max-width: 100%; }
-
-.site-footer {
-  padding: 24px;
-  color: #607078;
-  text-align: center;
-}
-
-@media (max-width: 600px) {
-  .container { margin: 28px auto; }
-  .page-heading { align-items: stretch; flex-direction: column; }
-  .site-header { padding: 18px 20px; }
-}
-
-.site-header nav { display: flex; gap: 20px; }
-
-.site-header {
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.site-header nav {
-  flex-wrap: wrap;
-}
-
+.article-header { padding-bottom: 24px; border-bottom: 1px solid var(--color-border); }
 .article-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .tag-badge {
   display: inline-block;
+  max-width: 100%;
   padding: 4px 10px;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: #e9eef2;
-  color: #216187;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+/* 同时服务文章详情和后台预览；v-html 生成的标签使用全局样式。 */
+.markdown-body {
+  max-width: 78ch;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.markdown-body h2, .markdown-body h3 { margin-top: 1.7em; }
+.markdown-body a { text-decoration: underline; text-underline-offset: 4px; }
+.markdown-body ul, .markdown-body ol { padding-left: 24px; }
+.markdown-body code {
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 0.92em;
+}
+.markdown-body :not(pre) > code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
+}
+.markdown-body pre {
+  max-width: 100%;
+  margin: 24px 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-code);
+  line-height: 1.65;
+  overflow-x: auto;
+  /* 保留代码缩进和长行；横向滚动只发生在代码框内。 */
+  overflow-wrap: normal;
+}
+.markdown-body pre code { padding: 0; background: transparent; color: var(--color-text); }
+.markdown-body blockquote {
+  margin: 20px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+.markdown-body blockquote > :last-child { margin-bottom: 0; }
+.markdown-body img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
+
+/* 多列表格保留可读列宽；滚动表格，不把整张页面撑宽。 */
+.markdown-body table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 24px 0;
+  border-collapse: collapse;
+  overflow-x: auto;
+}
+.markdown-body th, .markdown-body td {
+  min-width: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+.markdown-body th { background: var(--color-surface-raised); }
+.markdown-body hr { border: 0; border-top: 1px solid var(--color-border); margin: 28px 0; }
+
+.site-footer { padding: 24px 16px; border-top: 1px solid var(--color-border); color: var(--color-muted); text-align: center; }
+
+@media (max-width: 600px) {
+  .container { width: calc(100% - 32px); margin: 28px auto; }
+  .page-heading { align-items: stretch; flex-direction: column; gap: 16px; }
+  .site-header { padding: 16px; }
+  .site-header nav { width: 100%; }
+  .site-header nav a { padding: 8px 10px; }
 }

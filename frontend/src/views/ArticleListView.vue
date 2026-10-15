@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { siteProfile } from '../siteProfile.js'
 
 const articles = ref([])
 const type = ref('')
@@ -144,9 +145,15 @@ onMounted(loadArticles)
 
 <template>
   <section>
+    <header class="home-intro">
+      <p class="home-author">{{ siteProfile.nickname }}</p>
+      <h1>{{ siteProfile.siteName }}</h1>
+      <p>{{ siteProfile.tagline }}</p>
+      <RouterLink to="/about">了解本站与作者 →</RouterLink>
+    </header>
     <div class="page-heading">
       <div>
-      <h1>文章</h1>
+      <h2>文章</h2>
         <p>
           笔记、心得与公开的生活记录。
         </p>
@@ -253,26 +260,40 @@ onMounted(loadArticles)
 </template>
 
 <style scoped>
+/* 三个筛选框等宽；过长的选项也受控件宽度限制。 */
 .article-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex: 1 1 400px;
+  max-width: 520px;
+  gap: 12px;
 }
+.article-filters label { min-width: 0; }
 .article-search, .article-pagination {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: 12px;
-  margin: 20px 0;
+  margin: 24px 0;
 }
-.article-search label { flex: 1 1 220px; min-width: 0; }
-.article-search input {
-  display: block;
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px;
+.article-search label { flex: 1 1 240px; min-width: 0; }
+.article-pagination { align-items: center; padding-top: 20px; border-top: 1px solid var(--color-border); }
+.home-intro {
+  padding: clamp(20px, 3vw, 36px);
+  margin-bottom: 32px;
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-accent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
 }
-.article-search button, .article-pagination button { padding: 8px 12px; }
-.article-pagination { align-items: center; }
-button:disabled { cursor: not-allowed; opacity: 0.6; }
+.home-intro h1 { margin: 8px 0 12px; font-size: clamp(1.7rem, 4vw, 2.4rem); }
+.home-intro p { line-height: 1.8; color: var(--color-muted); }
+.home-intro .home-author { margin: 0; color: var(--color-accent); }
+.home-intro a { display: inline-flex; align-items: center; min-height: 44px; }
+.page-heading h2 { margin: 0 0 8px; }
+@media (max-width: 600px) {
+  /* flex-basis 在竖向父容器中会变成高度，因此手机上重置 flex。 */
+  .article-filters { flex: none; max-width: none; grid-template-columns: 1fr; }
+}
 </style>

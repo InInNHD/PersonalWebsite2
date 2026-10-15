@@ -56,6 +56,25 @@ public class ArticleController {
             long totalPages
     ) {}
 
+    // 一个目录项表示“某年某月有多少篇已发布文章”。
+    public record ArchiveMonth(String month, long total) {}
+
+    @GetMapping("/archive")
+    @Transactional(readOnly = true)
+    public List<ArchiveMonth> archive() {
+        String sql = """
+            SELECT DATE_FORMAT(published_at, '%Y-%m') AS archive_month,
+                   COUNT(*) AS article_count
+            FROM article
+            WHERE status = 'PUBLISHED' AND published_at IS NOT NULL
+            GROUP BY DATE_FORMAT(published_at, '%Y-%m')
+            ORDER BY archive_month DESC
+            """;
+        // 数据库先按年月聚合，目录只返回月份和数量，不加载全文。
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new ArchiveMonth(
+                rs.getString("archive_month"), rs.getLong("article_count")));
+    }
+
     @GetMapping
     @Transactional(readOnly = true)
     public ArticlePage list(
@@ -63,6 +82,7 @@ public class ArticleController {
             @RequestParam(name = "categoryId", required = false) Long categoryId,
             @RequestParam(name = "tagId", required = false) Long tagId,
             @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "month", required = false) String month,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
@@ -127,6 +147,20 @@ public class ArticleController {
             fromWhere += " AND (LOCATE(?, a.title) > 0 OR LOCATE(?, a.summary) > 0)";
             parameters.add(search);
             parameters.add(search);
+        }
+
+        if (month != null) {
+            // 限制为 MySQL DATETIME 可表示的四位年份以及合法月份。
+            // 不接受 2026-1、2026-13、0000-01 或空字符串。
+            if (!month.matches("[1-9][0-9]{3}-(0[1-9]|1[0-2])")) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "归档月份格式必须为 YYYY-MM");
+            }
+            // 总数与文章查询都会复用此条件，避免总数属于其他月份。
+            // 月份仍使用 ? 绑定，不能直接拼接用户输入。
+            // ponytail: 当前个人站点按年月格式化筛选；数据量增大且查询变慢时改用月份起止范围并评估索引。
+            fromWhere += " AND DATE_FORMAT(a.published_at, '%Y-%m') = ?";
+            parameters.add(month);
         }
 
         long total = jdbcTemplate.queryForObject(
