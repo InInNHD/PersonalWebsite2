@@ -1,9 +1,12 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { listReturn } from '../listNavigation.js'
 import MarkdownIt from 'markdown-it'
 
 const route = useRoute()
+// 不使用任意外部returnUrl；只返回经过校验的本站列表。
+const returnLocation = computed(() => listReturn(route.query.from))
 const article = ref(null)
 const loading = ref(false)
 const error = ref('')
@@ -67,7 +70,7 @@ watch(() => route.params.id, loadArticle, { immediate: true })
 
 <template>
   <article>
-    <RouterLink class="back-link" to="/">← 返回文章列表</RouterLink>
+    <RouterLink class="back-link" :to="returnLocation">← 返回文章列表</RouterLink>
 
     <p v-if="loading">正在加载文章…</p>
     <p v-else-if="error" class="error">{{ error }}</p>

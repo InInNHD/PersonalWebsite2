@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 import java.sql.Types;
+import java.net.URI;
+import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -52,7 +54,11 @@ public class AdminArticleController {
             Long categoryId,
             // 每篇最多选择 20 个标签；数组中的每个编号都必须非空且大于 0。
             @Size(max = 20)
-            List<@NotNull @Positive Long> tagIds
+            List<@NotNull @Positive Long> tagIds,
+            // 封面可留空；后端仍需校验协议，不能只依赖浏览器的type="url"。
+            @Size(max = 2048) String coverUrl,
+            // 兼容旧请求：未传置顶字段时按false处理。
+            Boolean pinned
     ) {}
 
     // 新建和发布都返回文章编号与当前状态。
@@ -65,11 +71,12 @@ public class AdminArticleController {
             @Valid @RequestBody DraftRequest request
     ) {
         checkCategory(request.categoryId());
+        String coverUrl = validateCoverUrl(request.coverUrl());
         String sql = """
         INSERT INTO article
             (title, summary, content_markdown, type,
-             category_id, status, published_at)
-        VALUES (?, ?, ?, ?, ?, 'DRAFT', NULL)
+             category_id, status, published_at, cover_url, pinned, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'DRAFT', NULL, ?, ?, CURRENT_TIMESTAMP(6))
         """;
         // 保存 MySQL 返回的自增编号。
         // 编号与 INSERT 来自同一次操作，避免从连接池取到另一条连接。
@@ -92,6 +99,8 @@ public class AdminArticleController {
                 statement.setLong(5, request.categoryId());
             }
 
+            statement.setString(6, coverUrl);
+            statement.setBoolean(7, Boolean.TRUE.equals(request.pinned()));
             return statement;
         }, keyHolder);
 
@@ -112,12 +121,15 @@ public class AdminArticleController {
 
         String sql = """
                 UPDATE article
-                SET status = 'PUBLISHED',
-                    published_at = COALESCE(published_at, CURRENT_TIMESTAMP)
+                SET updated_at = CASE WHEN status = 'DRAFT'
+                                      THEN CURRENT_TIMESTAMP(6) ELSE updated_at END,
+                    published_at = COALESCE(published_at, CURRENT_TIMESTAMP),
+                    status = 'PUBLISHED'
                 WHERE id = ?
                 """;
         // COALESCE 在原发布时间为空时设置时间。
-        // 重复点击发布会保留第一次发布的时间。
+        // 重复点击发布会保留第一次发布和最近修改的时间。
+        // updated_at先判断旧status，再修改status，避免MySQL赋值顺序影响判断。
         int updated = jdbcTemplate.update(sql, id);
 
         if (updated == 0) {
@@ -141,7 +153,8 @@ public class AdminArticleController {
             long id,
             String title,
             String type,
-            String status
+            String status,
+            boolean pinned
     ){}
 
     public record AdminDetail(
@@ -152,14 +165,17 @@ public class AdminArticleController {
             String type,
             String status,
             Long categoryId,
-            List<Long> tagIds
+            List<Long> tagIds,
+            String coverUrl,
+            boolean pinned,
+            LocalDateTime updatedAt
     ) {}
 
     @GetMapping
     public List<AdminSummary> list() {
         // 管理员可以看到草稿和已发布文章。
         String sql = """
-                SELECT id, title, type, status
+                SELECT id, title, type, status, pinned
                 FROM article
                 ORDER BY id DESC
                 """;
@@ -167,7 +183,8 @@ public class AdminArticleController {
                 rs.getLong("id"),
                 rs.getString("title"),
                 rs.getString("type"),
-                rs.getString("status")
+                rs.getString("status"),
+                rs.getBoolean("pinned")
         ));
     }
 
@@ -176,7 +193,7 @@ public class AdminArticleController {
     public AdminDetail detail(@PathVariable("id") long id) {
         String sql = """
         SELECT id, title, summary, content_markdown,
-               type, status, category_id
+               type, status, category_id, cover_url, pinned, updated_at
         FROM article
         WHERE id = ?
         """;
@@ -198,7 +215,11 @@ public class AdminArticleController {
                     rs.getObject("category_id", Long.class),
                     articleTags.read(id).stream()
                             .map(ArticleTags.TagItem::id)
-                            .toList()
+                            .toList(),
+                    rs.getString("cover_url"),
+                    rs.getBoolean("pinned"),
+                    // 旧文章的更新时间允许为空，getObject保留null。
+                    rs.getObject("updated_at", LocalDateTime.class)
             );
         }, id);
 
@@ -218,11 +239,13 @@ public class AdminArticleController {
         // 先确认文章存在；不存在时返回 404，避免插入无效关联。
         detail(id);
         checkCategory(request.categoryId());
+        String coverUrl = validateCoverUrl(request.coverUrl());
 
         String sql = """
             UPDATE article
             SET title = ?, summary = ?, content_markdown = ?,
-                type = ?, category_id = ?
+                type = ?, category_id = ?, cover_url = ?, pinned = ?,
+                updated_at = CURRENT_TIMESTAMP(6)
             WHERE id = ?
             """;
 
@@ -233,11 +256,33 @@ public class AdminArticleController {
                 request.contentMarkdown(),
                 request.type(),
                 request.categoryId(),
+                coverUrl,
+                Boolean.TRUE.equals(request.pinned()),
                 id);
 
         // 标签无效时抛出异常，刚才的文章内容更新也会回滚。
         articleTags.replace(id, request.tagIds());
         return detail(id);
+    }
+
+    // 后端只保存地址，不下载图片；真正显示时由访客浏览器请求图片。
+    // 空字符串统一存NULL，前端使用栏目默认图；不要求URL以.jpg/.png结尾。
+    private String validateCoverUrl(String input) {
+        if (input == null || input.isBlank()) return null;
+        String value = input.strip();
+        try {
+            URI uri = URI.create(value);
+            boolean supported = "http".equalsIgnoreCase(uri.getScheme())
+                    || "https".equalsIgnoreCase(uri.getScheme());
+            // 拒绝相对路径、无主机、带账号密码和其他协议的地址。
+            if (supported && uri.getHost() != null && uri.getRawUserInfo() == null) {
+                return value;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // 地址解析失败，按同一种输入错误返回。
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "封面必须为空或不含账号密码的完整HTTP/HTTPS地址");
     }
 
     private void checkCategory(Long categoryId) {

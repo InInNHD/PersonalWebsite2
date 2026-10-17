@@ -4,6 +4,9 @@
 # Local acceptance screenshots
 /artifacts/
 
+# Local database dumps and private configuration backups
+/backups/
+
 # Local secrets and configuration
 .env
 .env.*

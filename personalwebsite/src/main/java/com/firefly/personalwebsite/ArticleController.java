@@ -32,7 +32,10 @@ public class ArticleController {
             LocalDateTime publishedAt,
             Long categoryId,
             String categoryName,
-            List<ArticleTags.TagItem> tags
+            List<ArticleTags.TagItem> tags,
+            String coverUrl,
+            boolean pinned,
+            LocalDateTime updatedAt
     ) {}
 
     public record ArticleDetail(
@@ -44,7 +47,10 @@ public class ArticleController {
             LocalDateTime publishedAt,
             Long categoryId,
             String categoryName,
-            List<ArticleTags.TagItem> tags
+            List<ArticleTags.TagItem> tags,
+            String coverUrl,
+            boolean pinned,
+            LocalDateTime updatedAt
     ) {}
 
     // items 是本页文章；total 是满足相同筛选条件的文章总数。
@@ -172,9 +178,15 @@ public class ArticleController {
 
         String sql = """
             SELECT a.id, a.title, a.summary, a.type,
-                   a.published_at, a.category_id,
+                   a.published_at, a.category_id, a.cover_url, a.pinned, a.updated_at,
                    c.name AS category_name
-            """ + fromWhere + " ORDER BY a.published_at DESC, a.id DESC LIMIT ? OFFSET ?";
+            """ + fromWhere;
+        // 先在数据库里排序，再分页；不能只对取回的当前页排序。
+        // 归档按发布时间浏览；首页及普通筛选优先显示置顶文章。
+        sql += month == null
+                ? " ORDER BY a.pinned DESC, a.published_at DESC, a.id DESC"
+                : " ORDER BY a.published_at DESC, a.id DESC";
+        sql += " LIMIT ? OFFSET ?";
         // 只给本页查询加 LIMIT/OFFSET，不能污染上面的总数查询参数。
         List<Object> pageParameters = new ArrayList<>(parameters);
         pageParameters.add(size);
@@ -190,7 +202,10 @@ public class ArticleController {
                         rs.getTimestamp("published_at").toLocalDateTime(),
                         rs.getObject("category_id", Long.class),
                         rs.getString("category_name"),
-                        List.of()),
+                        List.of(),
+                        rs.getString("cover_url"),
+                        rs.getBoolean("pinned"),
+                        rs.getObject("updated_at", LocalDateTime.class)),
                 pageParameters.toArray());
 
         // 只批量查询本页文章的标签；筛选某个标签时仍返回每篇的全部标签。
@@ -199,7 +214,8 @@ public class ArticleController {
         var items = articles.stream().map(a -> new ArticleSummary(
                 a.id(), a.title(), a.summary(), a.type(), a.publishedAt(),
                 a.categoryId(), a.categoryName(),
-                tagsByArticle.getOrDefault(a.id(), List.of())
+                tagsByArticle.getOrDefault(a.id(), List.of()),
+                a.coverUrl(), a.pinned(), a.updatedAt()
         )).toList();
         return new ArticlePage(items, total, actualPage, size, totalPages);
     }
@@ -209,7 +225,7 @@ public class ArticleController {
     public ArticleDetail detail(@PathVariable("id") long id) {
         String sql = """
                 SELECT a.id, a.title, a.summary, a.content_markdown,
-                       a.type, a.published_at, a.category_id,
+                       a.type, a.published_at, a.category_id, a.cover_url, a.pinned, a.updated_at,
                        c.name AS category_name
                 FROM article a
                 LEFT JOIN category c ON c.id = a.category_id
@@ -227,7 +243,10 @@ public class ArticleController {
                         rs.getTimestamp("published_at").toLocalDateTime(),
                         rs.getObject("category_id", Long.class),
                         rs.getString("category_name"),
-                        articleTags.read(id)
+                        articleTags.read(id),
+                        rs.getString("cover_url"),
+                        rs.getBoolean("pinned"),
+                        rs.getObject("updated_at", LocalDateTime.class)
                 ),
                 id
         );

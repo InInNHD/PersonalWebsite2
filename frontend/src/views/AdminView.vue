@@ -18,6 +18,8 @@ function emptyArticle() {
     id: null,
     title: '',
     summary: '',
+    coverUrl: '', // 空地址表示使用栏目默认图。
+    pinned: false,
     contentMarkdown: '',
     type: 'NOTE',
     status: 'DRAFT',
@@ -67,6 +69,7 @@ function fillForm(article) {
 
   // 复制数组，让编辑表单拥有自己的标签选择。
   form.tagIds = [...(article.tagIds ?? [])]
+  form.coverUrl = article.coverUrl ?? ''
   savedSnapshot.value = JSON.stringify(form)
 }
 
@@ -179,6 +182,8 @@ async function persist() {
         body: JSON.stringify({
           title: form.title,
           summary: form.summary,
+          coverUrl: form.coverUrl.trim() || null,
+          pinned: form.pinned,
           contentMarkdown: form.contentMarkdown,
           type: form.type,
           categoryId: form.categoryId,
@@ -561,6 +566,18 @@ async function editTag(tag = null) {
 
             <p>已选 {{ form.tagIds.length }} 个；全部取消后保存即可清空标签。</p>
           </div>
+
+          <label>
+            封面地址（可选）
+            <input v-model="form.coverUrl" type="url" maxlength="2048"
+                   placeholder="https://example.com/cover.jpg" />
+          </label>
+          <p class="hint">留空使用栏目配图；图片无法加载时也会自动回退。建议使用稳定的HTTPS图片地址。</p>
+          <label class="presentation-pin">
+            <input v-model="form.pinned" type="checkbox" />置顶这篇文章
+          </label>
+          <p class="hint">置顶只影响公开列表顺序，勾选不会自动发布草稿。</p>
+
 
           <label>
             摘要

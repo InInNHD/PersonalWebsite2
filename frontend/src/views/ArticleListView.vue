@@ -1,6 +1,19 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { siteProfile } from '../siteProfile.js'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { finishList, listKey, listQuery, rememberList } from '../listNavigation.js'
+import ArticleCard from '../components/ArticleCard.vue'
+import SiteStats from '../components/SiteStats.vue'
+import ArticlePagination from '../components/ArticlePagination.vue'
+import heroArt from '../assets/hero.svg'
+
+const route = useRoute()
+const router = useRouter()
+const filtersExpanded = ref(false)
+// 从页头搜索入口进入时，自动打开筛选区，保证锚点目标可见。
+const showFilters = computed(() => filtersExpanded.value || route.hash === '#article-search')
+
 
 const articles = ref([])
 const type = ref('')
@@ -18,6 +31,11 @@ const page = ref(1)
 const pageSize = 10
 const total = ref(0)
 const totalPages = ref(0)
+
+// 离开首页时记录当前查询对应的滚动位置，供正文中的返回链接使用。
+onBeforeRouteLeave(() => {
+  rememberList(route, { left: window.scrollX, top: window.scrollY })
+})
 
 // 分类只在页面进入时加载一次。
 // 离开页面后，不再接受这次加载结果。
@@ -42,6 +60,7 @@ const typeOptions = [
 
 async function loadArticles() {
   const requestId = ++latestRequestId
+  const requestKey = listKey(route)
   loading.value = true
   error.value = ''
 
@@ -58,12 +77,17 @@ async function loadArticles() {
     if (!response.ok) throw new Error(`请求失败：HTTP ${response.status}`)
     const data = await response.json()
     // 列表与总数、页码都必须通过同一个请求编号检查。
-    if (requestId !== latestRequestId) return
+    if (requestId !== latestRequestId || requestKey !== listKey(route)) return
 
     articles.value = data.items
     total.value = data.total
     page.value = data.page
     totalPages.value = data.totalPages
+    // 内容减少时，后端可能把超出末页的请求纠正到末页。
+    // 同步修正网址，replace避免把错误页码留在历史中。
+    if (data.page !== Number(route.query.page ?? 1)) {
+      await router.replace({ path: '/', query: listQuery({ ...route.query, page: data.page }), hash: route.hash })
+    }
   } catch (cause) {
     if (requestId !== latestRequestId) return
     articles.value = []
@@ -71,14 +95,27 @@ async function loadArticles() {
     totalPages.value = 0
     error.value = cause instanceof Error ? cause.message : '加载文章列表失败'
   } finally {
-    if (requestId === latestRequestId) loading.value = false
+    if (requestId === latestRequestId) {
+      loading.value = false
+      await finishList(requestKey)
+    }
   }
+}
+
+// 交互只更新网址，watch统一读取网址并加载，避免按钮和watch重复请求。
+async function navigateList() {
+  const query = listQuery({ type: type.value, categoryId: categoryId.value,
+    tagId: tagId.value, keyword: keyword.value, page: page.value })
+  const sameQuery = listKey({ query }) === listKey(route)
+  await router.push({ path: '/', query, hash: '#entries' })
+  // 相同条件再次点搜索时watch不会触发，允许主动重新加载。
+  if (sameQuery) return loadArticles()
 }
 
 // 搜索提交与筛选条件变化都从第一页开始。
 function applyFilters() {
   page.value = 1
-  return loadArticles()
+  return navigateList()
 }
 
 function searchArticles() {
@@ -96,7 +133,7 @@ function changePage(nextPage) {
   // 加载期间和边界外不发请求，避免重复点击翻页。
   if (loading.value || nextPage < 1 || nextPage > totalPages.value) return
   page.value = nextPage
-  return loadArticles()
+  return navigateList()
 }
 
 async function loadCategories() {
@@ -140,160 +177,162 @@ onMounted(loadCategories)
 
 onMounted(loadTags)
 
-onMounted(loadArticles)
+// 直接打开链接、刷新、后退/前进都走同一入口。
+// 只观察查询条件；展开搜索面板等纯锚点变化不应重新请求文章。
+watch(() => listKey(route), () => {
+  const query = listQuery(route.query)
+  type.value = query.type ?? ''
+  categoryId.value = query.categoryId ?? ''
+  tagId.value = query.tagId ?? ''
+  keyword.value = query.keyword ?? ''
+  keywordInput.value = keyword.value
+  page.value = Number(query.page ?? 1)
+  if (categoryId.value || tagId.value || keyword.value) filtersExpanded.value = true
+  void loadArticles()
+}, { immediate: true, flush: 'sync' })
+
+// 所有入口继续调用原有 applyFilters，统一回到第一页并防止旧响应覆盖。
+function toggleFilters() {
+  if (route.hash === '#article-search') {
+    // 移除搜索锚点后才允许收起；下次点击页头搜索仍能重新展开。
+    filtersExpanded.value = false
+    return router.replace({ path: route.path, query: route.query, hash: '' })
+  }
+  filtersExpanded.value = !filtersExpanded.value
+}
+
+function selectType(value) {
+  type.value = value
+  return applyFilters()
+}
+
+function selectTag(id) {
+  tagId.value = id
+  filtersExpanded.value = true
+  return applyFilters()
+}
+
+function selectCategory(id) {
+  categoryId.value = id
+  filtersExpanded.value = true
+  return applyFilters()
+}
+
+function clearAll() {
+  type.value = ''
+  categoryId.value = ''
+  tagId.value = ''
+  keywordInput.value = ''
+  keyword.value = ''
+  return applyFilters()
+}
 </script>
 
 <template>
-  <section>
-    <header class="home-intro">
-      <p class="home-author">{{ siteProfile.nickname }}</p>
-      <h1>{{ siteProfile.siteName }}</h1>
-      <p>{{ siteProfile.tagline }}</p>
-      <RouterLink to="/about">了解本站与作者 →</RouterLink>
-    </header>
-    <div class="page-heading">
-      <div>
-      <h2>文章</h2>
-        <p>
-          笔记、心得与公开的生活记录。
-        </p>
-    </div>
-
-      <div class="article-filters">
-        <label>
-          栏目
-          <select v-model="type" @change="applyFilters">
-            <option
-                v-for="option in typeOptions"
-                :key="option.value"
-                :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
-        </label>
-
-        <label>
-          分类
-          <select v-model="categoryId" @change="applyFilters">
-            <option value="">全部分类</option>
-
-            <option
-                v-for="category in articleCategories"
-                :key="category.id"
-                :value="category.id"
-            >
-              {{ category.name }}
-            </option>
-          </select>
-        </label>
-        <label>
-          标签
-          <select v-model="tagId" @change="applyFilters">
-            <option value="">全部标签</option>
-
-            <option v-for="tag in tags" :key="tag.id" :value="tag.id">
-              {{ tag.name }}
-            </option>
-          </select>
-        </label>
-      </div>
-
-    </div>
-
-    <form class="article-search" @submit.prevent="searchArticles">
-      <label>
-        搜索标题或摘要
-        <input
-            v-model="keywordInput"
-            type="search"
-            maxlength="100"
-            placeholder="例如：Java、生活记录"
-        >
-      </label>
-      <button type="submit">搜索</button>
-      <button type="button" @click="clearSearch">清空搜索</button>
-    </form>
-
-      <p v-if="categoryError" class="error" role="alert">
-        {{ categoryError }}
-      </p>
-    <p v-if="tagError" class="error" role="alert">
-      {{ tagError }}
-    </p>
-    <p v-if="!loading && !error" role="status">共 {{ total }} 篇文章</p>
-      <p v-if="loading">正在加载文章...</p>
-    <p v-else-if="error" class="error" role="alert">{{ error }}</p>
-      <p v-else-if="articles.length === 0">
-        当前搜索或筛选条件下没有已发布的文章。
-      </p>
-
-    <div v-else class="article-grid">
-      <RouterLink
-        v-for="article in articles"
-        :key="article.id"
-        class="article-card"
-        :to="`/articles/${article.id}`"
-      >
-        <small>{{ article.type }}  · {{ article.publishedAt?.slice(0, 10) }}</small>
-        <p>{{ article.categoryName ?? '未分类' }}</p>
-        <h2>{{ article.title }}</h2>
-        <p>{{ article.summary }}</p>
-        <div v-if="article.tags?.length" class="article-tags" aria-label="文章标签">
-  <span v-for="tag in article.tags" :key="tag.id" class="tag-badge">
-    #{{ tag.name }}
-  </span>
+  <div class="v2-home">
+    <section class="v2-hero" aria-labelledby="home-title">
+      <div class="v2-hero-text">
+        <p class="v2-eyebrow">A PERSONAL NOTEBOOK, ALWAYS GROWING</p>
+        <h1 id="home-title">{{ siteProfile.heroTitle }}<br><span>{{ siteProfile.heroAccent }}</span></h1>
+        <p class="v2-hero-copy">你好，我是 {{ siteProfile.nickname }}。<br>{{ siteProfile.heroDescription }}</p>
+        <div class="v2-hero-actions">
+          <a class="v2-action primary" href="#entries" @click.prevent="selectType('NOTE')">阅读笔记 →</a>
+          <a class="v2-action" href="#entries" @click.prevent="selectType('DIARY')">浏览日记</a>
         </div>
-        <span>阅读全文 →</span>
-      </RouterLink>
-    </div>
-    <nav v-if="!error && totalPages > 0" class="article-pagination" aria-label="文章分页">
-      <button type="button" :disabled="loading || page <= 1" @click="changePage(page - 1)">
-        上一页
-      </button>
-      <span aria-live="polite">第 {{ page }} / {{ totalPages }} 页</span>
-      <button type="button" :disabled="loading || page >= totalPages" @click="changePage(page + 1)">
-        下一页
-      </button>
-    </nav>
-  </section>
-</template>
+        <p class="v2-hero-sign">LEARN SOMETHING. KEEP A LITTLE LIGHT.</p>
+      </div>
+      <figure class="v2-hero-art">
+        <img :src="heroArt" alt="打开的笔记终端与萤火轨迹" width="530" height="400">
+        <figcaption>FIREFLY LAB / SKETCH 001</figcaption>
+      </figure>
+    </section>
 
-<style scoped>
-/* 三个筛选框等宽；过长的选项也受控件宽度限制。 */
-.article-filters {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  flex: 1 1 400px;
-  max-width: 520px;
-  gap: 12px;
-}
-.article-filters label { min-width: 0; }
-.article-search, .article-pagination {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 12px;
-  margin: 24px 0;
-}
-.article-search label { flex: 1 1 240px; min-width: 0; }
-.article-pagination { align-items: center; padding-top: 20px; border-top: 1px solid var(--color-border); }
-.home-intro {
-  padding: clamp(20px, 3vw, 36px);
-  margin-bottom: 32px;
-  border: 1px solid var(--color-border);
-  border-top: 3px solid var(--color-accent);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-  overflow-wrap: anywhere;
-}
-.home-intro h1 { margin: 8px 0 12px; font-size: clamp(1.7rem, 4vw, 2.4rem); }
-.home-intro p { line-height: 1.8; color: var(--color-muted); }
-.home-intro .home-author { margin: 0; color: var(--color-accent); }
-.home-intro a { display: inline-flex; align-items: center; min-height: 44px; }
-.page-heading h2 { margin: 0 0 8px; }
-@media (max-width: 600px) {
-  /* flex-basis 在竖向父容器中会变成高度，因此手机上重置 flex。 */
-  .article-filters { flex: none; max-width: none; grid-template-columns: 1fr; }
-}
-</style>
+    <div class="v2-content">
+      <section id="entries" aria-labelledby="entries-title" :aria-busy="loading">
+        <header class="v2-entry-heading">
+          <h2 id="entries-title">最近的记录<span>.</span></h2>
+          <small v-if="!loading && !error" role="status">共 {{ total }} 篇文章</small>
+        </header>
+        <div class="v2-content-tools" role="group" aria-label="文章栏目">
+          <button v-for="option in typeOptions" :key="option.value" type="button" class="v2-type"
+                  :aria-pressed="type === option.value" @click="selectType(option.value)">{{ option.label }}</button>
+          <button type="button" class="v2-filter-toggle" :aria-expanded="showFilters" aria-controls="article-search"
+                  @click="toggleFilters">筛选</button>
+        </div>
+
+        <!-- v-show 保留输入内容。筛选面板收起时，已选条件仍然生效。 -->
+        <div v-show="showFilters" id="article-search" class="v2-filter-panel">
+          <label>栏目
+            <select v-model="type" @change="applyFilters">
+              <option v-for="option in typeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label>分类
+            <select v-model="categoryId" @change="applyFilters">
+              <option value="">全部分类</option>
+              <option v-for="category in articleCategories" :key="category.id" :value="category.id">{{ category.name }}</option>
+            </select>
+          </label>
+          <label>标签
+            <select v-model="tagId" @change="applyFilters">
+              <option value="">全部标签</option>
+              <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+            </select>
+          </label>
+          <form class="v2-search" @submit.prevent="searchArticles">
+            <label>搜索标题或摘要
+              <input v-model="keywordInput" type="search" maxlength="100" placeholder="例如：Java、生活记录">
+            </label>
+            <button type="submit">搜索</button>
+            <button type="button" @click="clearSearch">清空搜索</button>
+            <button type="button" @click="clearAll">重置筛选</button>
+          </form>
+        </div>
+        <p v-if="categoryId !== '' || tagId !== '' || keyword" class="v2-meta">
+          正在使用筛选条件：{{ keyword ? `关键词「${keyword}」` : '' }}
+          {{ categoryId !== '' ? '已选分类' : '' }} {{ tagId !== '' ? '已选标签' : '' }}
+          <button type="button" class="v2-type" @click="filtersExpanded = true">查看条件</button>
+        </p>
+        <p v-if="categoryError" class="error" role="alert">{{ categoryError }}</p>
+        <p v-if="tagError" class="error" role="alert">{{ tagError }}</p>
+
+        <div v-if="loading" class="v2-state" role="status">正在整理内容，请稍候…</div>
+        <div v-else-if="error" class="v2-state" role="alert">
+          <h3>内容暂时没能加载</h3><p>{{ error }}</p>
+          <button type="button" @click="loadArticles">重新加载文章</button>
+        </div>
+        <div v-else-if="articles.length === 0" class="v2-state">
+          <h3>暂时没有找到记录</h3><p>当前搜索或筛选条件下没有已发布的文章。</p>
+          <button type="button" @click="clearAll">清空全部条件</button>
+        </div>
+        <div v-else class="v2-grid">
+          <ArticleCard v-for="(article, index) in articles" :key="article.id" :article="article"
+                       :featured="page === 1 && index === 0" :return-to="route.fullPath" @select-tag="selectTag" />
+        </div>
+        <ArticlePagination v-if="!error" :page="page" :total-pages="totalPages" :loading="loading" @change="changePage" />
+      </section>
+
+      <aside class="v2-sidebar" aria-label="作者与内容导航">
+        <section class="v2-profile">
+          <span class="v2-avatar" aria-hidden="true">f</span>
+          <h2>{{ siteProfile.nickname }}</h2>
+          <span class="v2-eyebrow">LEARNING IN PUBLIC</span>
+          <p>{{ siteProfile.profileDescription }}</p>
+          <SiteStats />
+          <div class="v2-profile-links">
+            <a v-if="siteProfile.githubUrl" :href="siteProfile.githubUrl" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+            <RouterLink to="/about">关于我 →</RouterLink>
+          </div>
+        </section>
+        <section class="v2-side-links">
+          <h3>在这里探索</h3>
+          <a v-for="category in articleCategories" :key="category.id" href="#entries"
+             @click.prevent="selectCategory(category.id)">{{ category.name }} <span aria-hidden="true">→</span></a>
+          <RouterLink to="/archive">浏览归档 <span aria-hidden="true">→</span></RouterLink>
+          <RouterLink to="/resources">资源收藏 <span aria-hidden="true">→</span></RouterLink>
+        </section>
+        <p class="v2-side-note">不必一次照亮整条路，<br>记住今天走过的这一段。</p>
+      </aside>
+    </div>
+  </div>
+</template>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>萤火手记 · 第二版视觉样稿</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./prototype.js" defer></script>
+</head>
+<body>
+  <header class="prototype-bar">
+    <a class="prototype-brand" href="#home" data-screen="home"><span class="prototype-dot"></span> V2 CONCEPT <span>/ 01</span></a>
+    <nav aria-label="样稿页面" class="prototype-tabs">
+      <button data-screen="home" aria-current="page">首页</button>
+      <button data-screen="article">文章详情</button>
+      <button data-screen="editor">写作后台</button>
+      <button data-screen="system">组件规范</button>
+    </nav>
+    <div class="device-switch" role="group" aria-label="预览宽度">
+      <button data-device="desktop" aria-pressed="true">桌面</button>
+      <button data-device="mobile" aria-pressed="false">手机</button>
+    </div>
+  </header>
+  <div class="prototype-note">交互设计样稿 · 全部为示例内容 · 保存与发布仅演示本页状态，刷新即重置</div>
+  <div id="canvas" class="canvas"><div id="app"></div></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="modal" aria-labelledby="modal-title">
+    <div class="dialog-head"><h2 id="modal-title"></h2><button id="close-modal" class="icon-button" aria-label="关闭弹窗">×</button></div>
+    <div id="modal-content"></div>
+  </dialog>
+</body>
+</html>
