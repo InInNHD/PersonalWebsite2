@@ -23,6 +23,8 @@
 
 第二轮B按手敲节奏分为B1数据和B2导航状态。[第12节：封面、置顶、更新时间与公开统计](docs/12-v2-article-presentation.md)已完成并验收：实际前端14项、独立库后端15项、两端构建、8组HTTP检查和浏览器写作流程通过。两处误写标记已清理；个人库在备份恢复验证后成功执行005，原有数据核对一致，迁移后7组只读接口及浏览器首页/详情复核通过。详见[验收记录](docs/V2-ARTICLE-PRESENTATION-ACCEPTANCE.md)。[第13节B2](docs/13-v2-list-navigation.md)也已完成实际验收：前端17项、构建、浏览器筛选网址/刷新/前进后退/正文返回位置与手机流程通过，真实个人库8组只读检查通过，五表校验值未变化，详见[B2验收记录](docs/V2-LIST-NAVIGATION-ACCEPTANCE.md)。第二轮已完成并纳入v0.7.0阶段性预发布；下一轮文章阅读体验，云部署仍后置。
 
+第三轮[第14节3A阅读基础](docs/14-v2-article-reading.md)已完成实际验收：文章头部、正文布局、唯一章节锚点与目录、约计阅读时长、阅读进度和回顶均正常。实际前端23项及构建通过，浏览器长文/四档宽度/错误恢复/B2返回检查通过，真实个人库公开详情、草稿404及五表校验值复核通过，见[3A验收记录](docs/V2-READING-FOUNDATION-ACCEPTANCE.md)。[第15节3B](docs/15-v2-reading-media.md)也已完成实际验收：代码高亮、语言标签、复制反馈和正文图片查看正常；实际28项前端测试、构建、四档宽度和3A/B2回归通过，见[3B验收记录](docs/V2-READING-MEDIA-ACCEPTANCE.md)。[第16节3C](docs/16-v2-reading-neighbors.md)及第三轮本地功能验收也已通过：实际前端34项、隔离MySQL后端18项及两端构建通过；整轮目录/代码/图片/前后篇组合、错误恢复、四档宽度、原筛选及629px位置恢复正常，个人库3篇公开导航和草稿404核对通过，五表校验值未变化。见[第三轮验收记录](docs/V2-READING-NAVIGATION-ACCEPTANCE.md)。第三轮已纳入v0.8.0阶段性预发布；后续第四轮内容导航与个人展示。
+
 归档页路径为 `/archive`；公开接口 `/api/articles/archive` 返回月份及文章数，列表接口支持可选的 `month=YYYY-MM` 参数。归档只包含已发布文章，以首次发布时间归属年月。
 
 公开文章列表 `/api/articles` 现在返回分页对象：`items`、`total`、`page`、`size`、`totalPages`；默认第一页、每页 10 篇。升级时需同步前后端，旧数组解析方式不再适用。详情及管理员文章接口的返回格式不变。
@@ -123,7 +125,7 @@ npm run dev
 
 ```powershell
 cd E:\PersonalWebsite2\frontend
-node --test tests/category-flow.test.mjs tests/presentation-flow.test.mjs tests/navigation-flow.test.mjs
+node --test tests/category-flow.test.mjs tests/presentation-flow.test.mjs tests/navigation-flow.test.mjs tests/reading-flow.test.mjs tests/reading-media-flow.test.mjs tests/reading-neighbors-flow.test.mjs
 npm run build
 ```
 
@@ -135,6 +137,8 @@ cd E:\PersonalWebsite2\personalwebsite
 .\mvnw.cmd package
 ```
 
+本轮导航三项专项位于 `docs/checks/ArticleNavigationGuideTests.java`，在适配专用库名前缀的隔离副本中执行；上述 Maven 命令只运行 `personalwebsite/src/test` 内的15项测试。18项整轮验收及范围见 `docs/RELEASE-v0.8.0.md`。
+
 后端流程测试连接真实 MySQL，需要完整的五张表。测试中的写入通过事务回滚，MySQL 自增编号仍可能前进；建议使用独立测试数据库。`CategoryArticleFlowTests` 使用的固定密码仅属于测试上下文。
 
-最新 `v0.7.0` 预发布包含第二版首页、文章展示字段、公开统计与列表导航，完整说明见 `docs/RELEASE-v0.7.0.md`；此前版本见 `docs/RELEASE-v0.6.0.md`。从 v0.6.0 升级需备份后执行尚未应用的 `005-article-presentation.sql`，已完成005时跳过；同步更新并重启前后端。Release 提供源码下载，运行时仍需自行准备环境、数据库及本地配置。
+最新 `v0.8.0` 预发布包含阅读目录、进度、代码高亮/复制、图片查看和公开前后篇导航，完整说明见 `docs/RELEASE-v0.8.0.md`；此前版本见 `docs/RELEASE-v0.7.0.md`。从 v0.7.0 升级无需新增数据库迁移，更新前后端并运行 `npm ci` 安装锁定依赖后重新构建/启动；更早版本按上方说明补齐尚未执行的005。Release 提供源码下载，运行时仍需自行准备环境、数据库及本地配置。

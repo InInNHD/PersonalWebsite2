@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { listHash, listQuery, listScroll, prepareList } from './listNavigation.js'
+import { prepareReading, readingScroll } from './readingNavigation.js'
 import App from './App.vue'
 import ArticleListView from './views/ArticleListView.vue'
 import ArticleDetailView from './views/ArticleDetailView.vue'
@@ -17,6 +18,9 @@ const router = createRouter({
     history: createWebHistory(),
     // 首页等待列表渲染完成，再执行浏览器后退或正文返回的位置恢复。
     scrollBehavior(to, from, savedPosition) {
+        if (to.path.startsWith('/articles/')) {
+            return readingScroll(to, savedPosition, () => router.currentRoute.value)
+        }
         return listScroll(to, from, savedPosition, () => router.currentRoute.value)
     },
     routes: [
@@ -39,6 +43,9 @@ router.beforeEach(to => {
         return { path: '/', query, hash, replace: true }
     }
 })
-router.beforeResolve((to, from) => { prepareList(to, from) })
+router.beforeResolve((to, from) => {
+    prepareList(to, from)
+    prepareReading(to, from)
+})
 
 createApp(App).use(router).mount('#app')

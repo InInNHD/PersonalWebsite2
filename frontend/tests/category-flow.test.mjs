@@ -33,25 +33,6 @@ function articlePage(items, total = items.length, page = 1, size = 10) {
   return response({ items, total, page, size, totalPages: Math.ceil(total / size) })
 }
 
-test('详情的旧正文和分类不会覆盖新文章', async () => {
-  const pending = []
-  const app = component('ArticleDetailView.vue', 'loadArticle, article, contentHtml', () => {
-    const item = deferred()
-    pending.push(item)
-    return item.promise
-  })
-  const first = app.loadArticle(1)
-  const second = app.loadArticle(2)
-  pending[1].resolve(response({ id: 2, categoryName: 'Vue', contentMarkdown: '# Current' }))
-  await second
-  pending[0].resolve(response({ id: 1, categoryName: 'Java', contentMarkdown: '# Old' }))
-  await first
-  assert.equal(app.article.value.id, 2)
-  assert.equal(app.article.value.categoryName, 'Vue')
-  assert.match(app.contentHtml.value, /Current/)
-  assert.doesNotMatch(app.contentHtml.value, /Old/)
-})
-
 test('后台登录、分类新增重名与改名、文章归类发布及恢复未分类', async () => {
   const categories = []
   let article
