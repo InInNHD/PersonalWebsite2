@@ -125,8 +125,11 @@ watch(() => route.params.id, loadArticle, { immediate: true })
           <span>约 {{ rendered.minutes }} 分钟阅读</span>
         </div>
         <div class="reading-taxonomy">
-          <span class="v2-badge">{{ article.categoryName ?? '未分类' }}</span>
-          <span v-for="tag in article.tags ?? []" :key="tag.id" class="reading-tag">#{{ tag.name }}</span>
+          <RouterLink v-if="article.categoryId != null" class="v2-badge"
+                      :to="{ path: '/topics', query: { kind: 'category', id: String(article.categoryId) }, hash: '#entries' }">{{ article.categoryName }}</RouterLink>
+          <span v-else class="v2-badge">未分类</span>
+          <RouterLink v-for="tag in article.tags ?? []" :key="tag.id" class="reading-tag"
+                      :to="{ path: '/topics', query: { kind: 'tag', id: String(tag.id) }, hash: '#entries' }">#{{ tag.name }}</RouterLink>
         </div>
         <img v-if="article.coverUrl && !coverFailed" class="reading-cover" :src="article.coverUrl"
              alt="" width="1200" height="500" referrerpolicy="no-referrer"

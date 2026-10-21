@@ -17,7 +17,7 @@ let latestRequestId = 0
 const returnPath = computed(() => {
   const origin = listReturn(props.from)
   const query = new URLSearchParams(origin.query ?? {}).toString()
-  return '/' + (query ? `?${query}` : '') + (origin.hash ?? '')
+  return origin.path + (query ? `?${query}` : '') + (origin.hash ?? '')
 })
 function articleLocation(item) {
   return { path: `/articles/${item.id}`, query: { from: returnPath.value } }

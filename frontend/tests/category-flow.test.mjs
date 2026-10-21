@@ -22,17 +22,6 @@ function component(file, names, fetch, window = {}) {
 }
 
 const response = (value, status = 200) => new Response(JSON.stringify(value), { status })
-function deferred() {
-  let resolve, reject
-  const promise = new Promise((yes, no) => { resolve = yes; reject = no })
-  return { promise, resolve, reject }
-}
-
-// 本轮列表响应为分页对象，详情与管理员响应仍使用原 response()。
-function articlePage(items, total = items.length, page = 1, size = 10) {
-  return response({ items, total, page, size, totalPages: Math.ceil(total / size) })
-}
-
 test('后台登录、分类新增重名与改名、文章归类发布及恢复未分类', async () => {
   const categories = []
   let article
@@ -196,100 +185,4 @@ test('文章标签发送、回显、清空、新建重置及保存失败保留�
   assert.deepEqual([...app.form.tagIds], [])
   assert.equal(app.form.id, null)
   assert.equal(app.articleDirty.value, false)
-})
-
-// 归档复用已有组件执行器，使用真实脚本，仅替换网络。
-test('归档初始化按年分组，翻页保留月份，切换月份回第一页，空目录与重试', async () => {
-  const urls = []
-  const app = component('ArchiveView.vue',
-    'loadArchive, changePage, changeMonth, selectedMonth, page, yearGroups, total, loading, error', async url => {
-      urls.push(url)
-      if (url === '/api/articles/archive') return response([
-        { month: '2040-03', total: 12 }, { month: '2040-02', total: 2 }, { month: '2039-12', total: 1 },
-      ])
-      const params = new URL(url, 'http://localhost').searchParams
-      return articlePage([{ id: 1 }], params.get('month') === '2040-03' ? 12 : 2, Number(params.get('page')))
-    })
-  await app.loadArchive()
-  assert.equal(app.selectedMonth.value, '2040-03')
-  assert.deepEqual(app.yearGroups.value.map(g => [g.year, g.months.length]), [['2040', 2], ['2039', 1]])
-  assert.equal(app.total.value, 12)
-  assert.equal(app.loading.value, false)
-  await app.changePage(2)
-  assert.equal(new URL(urls.at(-1), 'http://localhost').searchParams.get('month'), '2040-03')
-  assert.equal(app.page.value, 2)
-  const before = urls.length
-  await app.changePage(0)
-  await app.changePage(3)
-  app.loading.value = true
-  await app.changePage(1)
-  app.loading.value = false
-  assert.equal(urls.length, before)
-  app.selectedMonth.value = '2040-02'
-  await app.changeMonth()
-  assert.equal(app.page.value, 1)
-  assert.equal(app.total.value, 2)
-
-  const calls = []
-  const empty = component('ArchiveView.vue', 'loadArchive, loading, months, total', async url => {
-    calls.push(url)
-    return response([])
-  })
-  await empty.loadArchive()
-  assert.deepEqual(calls, ['/api/articles/archive'])
-  assert.equal(empty.loading.value, false)
-  assert.equal(empty.total.value, 0)
-  let attempts = 0
-  const retry = component('ArchiveView.vue', 'loadArchive, error, loading', async () => {
-    if (++attempts === 1) throw Error('network failed')
-    return response([])
-  })
-  await retry.loadArchive()
-  assert.equal(retry.error.value, 'network failed')
-  await retry.loadArchive()
-  assert.equal(retry.error.value, '')
-  assert.equal(retry.loading.value, false)
-})
-
-test('归档旧请求不覆盖最新月份，当前失败清理列表，重试和卸载不接受旧结果', async () => {
-  const pending = []
-  const app = component('ArchiveView.vue',
-    'loadArticles, loadArchive, selectedMonth, articles, total, page, totalPages, error, loading, months', url => {
-      const item = { url, ...deferred() }
-      pending.push(item)
-      return item.promise
-    })
-  app.selectedMonth.value = '2040-03'
-  const first = app.loadArticles()
-  app.selectedMonth.value = '2040-02'
-  const second = app.loadArticles()
-  pending[1].resolve(articlePage([{ id: 2 }], 2))
-  await second
-  pending[0].reject(Error('obsolete'))
-  await first
-  assert.equal(app.articles.value[0].id, 2)
-  assert.equal(app.total.value, 2)
-  assert.equal(app.error.value, '')
-  const failed = app.loadArticles()
-  pending[2].resolve(response({}, 500))
-  await failed
-  assert.match(app.error.value, /HTTP 500/)
-  assert.deepEqual(app.articles.value, [])
-  assert.equal(app.total.value, 0)
-  assert.equal(app.totalPages.value, 0)
-
-  const old = app.loadArticles()
-  const retry = app.loadArchive()
-  pending[4].resolve(response([]))
-  await retry
-  pending[3].resolve(articlePage([{ id: 99 }], 99))
-  await old
-  assert.deepEqual(app.articles.value, [])
-  assert.equal(app.total.value, 0)
-  assert.equal(app.loading.value, false)
-  const leaving = app.loadArticles()
-  app.unmount()
-  pending[5].resolve(articlePage([{ id: 100 }], 100))
-  await leaving
-  assert.deepEqual(app.articles.value, [])
 })

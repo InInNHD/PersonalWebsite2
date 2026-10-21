@@ -1,170 +1,207 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import { archiveQuery, finishList, listKey, rememberList } from '../listNavigation.js'
+import ArticlePagination from '../components/ArticlePagination.vue'
 
-const months = ref([])
-const selectedMonth = ref('')
+const route = useRoute()
+const router = useRouter()
+// 归档和日记共用月份导航、分页与异步处理，只改变内容范围和展示。
+const diary = computed(() => route.path === '/diary')
+const months = ref(null) // null表示目录尚未取得；[]才表示公开目录为空。
+const directoryLoading = ref(true)
+const directoryError = ref('')
 const articles = ref([])
-const page = ref(1)
-const pageSize = 10
-const total = ref(0)
-const totalPages = ref(0)
 const loading = ref(false)
 const error = ref('')
-
-// 月份目录由后端倒序排列，同一年自然连续，直接按顺序分组。
-// computed 会在 months 改变时重新计算，供模板生成 optgroup。
+const page = ref(1)
+const total = ref(0)
+const totalPages = ref(0)
+const query = computed(() => archiveQuery(route.query))
+const selectedMonth = computed(() => query.value.month ?? months.value?.[0]?.month ?? '')
+const selected = computed(() => months.value?.find(item => item.month === selectedMonth.value))
+const monthLabel = computed(() => selectedMonth.value
+    ? `${selectedMonth.value.slice(0, 4)} 年 ${Number(selectedMonth.value.slice(5))} 月` : '暂无公开记录')
+const publicTotal = computed(() => months.value?.reduce((sum, item) => sum + item.total, 0) ?? 0)
+const names = { NOTE: '笔记', THOUGHT: '心得', DIARY: '日记' }
+// 接口按年月倒序，直接按连续年份分组；不重新加载全文计算目录。
 const yearGroups = computed(() => {
   const groups = []
-  for (const item of months.value) {
+  for (const item of months.value ?? []) {
     const year = item.month.slice(0, 4)
     let group = groups.at(-1)
     if (!group || group.year !== year) {
-      group = { year, months: [] }
+      group = { year, months: [], total: 0 }
       groups.push(group)
     }
     group.months.push(item)
+    group.total += item.total
   }
   return groups
 })
-
-// 月份目录与文章请求共同使用这个编号，重试或切换月份使旧请求失效。
 let latestRequestId = 0
-onBeforeUnmount(() => { latestRequestId += 1 })
+let latestDirectoryId = 0
+let disposed = false
+
+onBeforeRouteLeave(() => rememberList(route, { left: window.scrollX, top: window.scrollY }))
+onBeforeRouteUpdate((to, from) => rememberList(from, { left: window.scrollX, top: window.scrollY }))
+onBeforeUnmount(() => { disposed = true; latestRequestId += 1; latestDirectoryId += 1 })
+// 两个路由复用同一组件时不会离开组件，切换前也保存原页面位置。
+function monthLocation(month, nextPage = 1) {
+  return { path: route.path, query: archiveQuery({ month, page: nextPage }), hash: '#entries' }
+}
+function articleLocation(article) {
+  return { path: `/articles/${article.id}`, query: { from: route.fullPath } }
+}
 
 async function loadArticles() {
   const requestId = ++latestRequestId
-  loading.value = true
+  const key = listKey(route)
+  articles.value = []
+  total.value = 0
+  totalPages.value = 0
+  loading.value = false
   error.value = ''
+  page.value = Number(query.value.page ?? 1)
+  // 目录先就绪，才能判断月份是否公开；草稿专用月份不会触发列表请求。
+  if (!months.value) {
+    if (!directoryLoading.value) await finishList(key)
+    return
+  }
+  if (!selected.value) { await finishList(key); return }
+  loading.value = true
   try {
-    const params = new URLSearchParams({
-      month: selectedMonth.value,
-      page: String(page.value),
-      size: String(pageSize),
-    })
-    const response = await fetch(`/api/articles?${params.toString()}`)
-    if (!response.ok) throw new Error(`请求失败：HTTP ${response.status}`)
+    const params = new URLSearchParams({ month: selectedMonth.value, page: String(page.value), size: '10' })
+    if (diary.value) params.set('type', 'DIARY')
+    const response = await fetch(`/api/articles?${params}`)
+    if (!response.ok) throw new Error(`记录加载失败：HTTP ${response.status}`)
     const data = await response.json()
-    // 等 JSON 解析完成后再判断，旧请求不能覆盖本页内容和页码。
-    if (requestId !== latestRequestId) return
+    if (requestId !== latestRequestId || key !== listKey(route)) return
     articles.value = data.items
     total.value = data.total
-    page.value = data.page
     totalPages.value = data.totalPages
+    page.value = data.page
+    // 内容变少时同步后端纠正的末页，不把无效页码留在历史中。
+    if (data.page !== Number(query.value.page ?? 1)) {
+      await router.replace({ path: route.path,
+        query: archiveQuery({ month: selectedMonth.value, page: data.page }), hash: route.hash })
+    }
   } catch (cause) {
     if (requestId !== latestRequestId) return
-    articles.value = []
-    total.value = 0
-    totalPages.value = 0
-    error.value = cause instanceof Error ? cause.message : '加载归档文章失败'
+    error.value = cause instanceof Error ? cause.message : '记录加载失败'
   } finally {
-    if (requestId === latestRequestId) loading.value = false
+    if (requestId === latestRequestId) { loading.value = false; await finishList(key) }
   }
 }
 
 async function loadArchive() {
-  const requestId = ++latestRequestId
-  loading.value = true
-  error.value = ''
-  // 重试从最新月份开始，先清空旧目录和列表。
-  months.value = []
-  selectedMonth.value = ''
+  const requestId = ++latestDirectoryId
+  const path = route.path
+  latestRequestId += 1
+  directoryLoading.value = true
+  directoryError.value = ''
+  months.value = null
   articles.value = []
-  page.value = 1
+  loading.value = false
+  error.value = ''
   total.value = 0
   totalPages.value = 0
   try {
-    const response = await fetch('/api/articles/archive')
-    if (!response.ok) throw new Error(`请求失败：HTTP ${response.status}`)
+    const response = await fetch(diary.value ? '/api/articles/archive?type=DIARY' : '/api/articles/archive')
+    if (!response.ok) throw new Error(`月份目录加载失败：HTTP ${response.status}`)
     const data = await response.json()
-    if (requestId !== latestRequestId) return
+    if (disposed || requestId !== latestDirectoryId || path !== route.path) return
     months.value = data
-    // 空目录不再发文章请求，避免发送 month= 的非法参数。
-    if (data.length === 0) return
-    selectedMonth.value = data[0].month
-    // 文章加载会取得新编号，并在自己的 finally 中结束 loading。
-    await loadArticles()
+    // 先渲染目录，再等待文章；滚动恢复要发生在真实内容出现后。
+    directoryLoading.value = false
+    // 首次进入时也把实际月份写进网址，稍后新增月份不会改变正文的返回来源。
+    if (data.length && !query.value.month) {
+      await router.replace({ path, query: { month: data[0].month }, hash: route.hash })
+    } else {
+      await loadArticles()
+    }
   } catch (cause) {
-    if (requestId !== latestRequestId) return
-    error.value = cause instanceof Error ? cause.message : '加载归档目录失败'
+    if (disposed || requestId !== latestDirectoryId) return
+    directoryError.value = cause instanceof Error ? cause.message : '月份目录加载失败'
   } finally {
-    if (requestId === latestRequestId) loading.value = false
+    if (!disposed && requestId === latestDirectoryId) {
+      directoryLoading.value = false
+      if (!months.value) await finishList(listKey(route))
+    }
   }
-}
-
-function changeMonth() {
-  page.value = 1
-  return loadArticles()
 }
 
 function changePage(nextPage) {
   if (loading.value || nextPage < 1 || nextPage > totalPages.value) return
-  page.value = nextPage
-  return loadArticles()
+  return router.push(monthLocation(selectedMonth.value, nextPage))
 }
-
+// 顺序有意如此：先清理跨页面旧目录，再响应本次路径/月份/页码。
+watch(() => route.path, loadArchive, { flush: 'sync' })
+watch(() => listKey(route), loadArticles, { immediate: true, flush: 'sync' })
 onMounted(loadArchive)
 </script>
 
 <template>
-  <section>
-    <div class="page-heading">
-      <div>
-        <h1>文章归档</h1>
-        <p>按首次发布时间，回看笔记、心得与公开的生活记录。</p>
+  <section class="timeline-page" :class="{ 'is-diary': diary }">
+    <header class="timeline-heading">
+      <p class="v2-eyebrow">{{ diary ? 'LIFE / SELECTED MOMENTS' : 'ARCHIVE / THROUGH THE YEARS' }}</p>
+      <h1>{{ diary ? '公开日记' : '文章归档' }}</h1>
+      <p>{{ diary ? '收藏生活里的微光。这里只展示选择公开的记录。' : '沿着时间的线索，回看笔记、心得与公开的生活记录。' }}</p>
+      <RouterLink :to="diary ? '/archive' : '/diary'">{{ diary ? '浏览全部归档 →' : '只看公开日记 →' }}</RouterLink>
+    </header>
+    <div v-if="directoryLoading" class="v2-state" role="status">正在整理月份目录…</div>
+    <div v-else-if="directoryError" class="v2-state" role="alert">
+      <p>{{ directoryError }}</p><button type="button" @click="loadArchive">重新加载月份</button>
+    </div>
+    <template v-else-if="months">
+      <p class="timeline-total">{{ diary ? '公开日记' : '公开记录' }} {{ publicTotal }} 篇 · {{ months.length }} 个月</p>
+      <div v-if="!months.length" class="v2-state">{{ diary ? '暂时没有公开日记。' : '暂时没有已发布的文章。' }}</div>
+      <div v-else class="timeline-layout">
+        <nav class="timeline-months" aria-label="按年月浏览">
+          <label class="timeline-month-select">快速选择月份
+            <select :value="selectedMonth" @change="router.push(monthLocation($event.target.value))">
+              <option v-if="!selected" :value="selectedMonth">{{ selectedMonth }}（无公开记录）</option>
+              <optgroup v-for="group in yearGroups" :key="group.year" :label="`${group.year} 年`">
+                <option v-for="item in group.months" :key="item.month" :value="item.month">{{ item.month }}（{{ item.total }} 篇）</option>
+              </optgroup>
+            </select>
+          </label>
+          <section v-for="group in yearGroups" :key="group.year" class="timeline-year">
+            <h2>{{ group.year }} <small>{{ group.total }} 篇</small></h2>
+            <div>
+              <RouterLink v-for="item in group.months" :key="item.month" :to="monthLocation(item.month)"
+                          :aria-current="selectedMonth === item.month ? 'page' : null">
+                <span>{{ Number(item.month.slice(5)) }} 月</span><small>{{ item.total }} 篇</small>
+              </RouterLink>
+            </div>
+          </section>
+        </nav>
+        <section id="entries" class="timeline-results" :aria-busy="loading" aria-labelledby="timeline-month-title">
+          <header><p class="v2-eyebrow">{{ diary ? 'SELECTED DIARY' : 'PUBLISHED RECORDS' }}</p><h2 id="timeline-month-title">{{ monthLabel }}</h2></header>
+          <div v-if="!selected" class="v2-state">这个月暂时没有公开记录，请选择其他月份。</div>
+          <div v-else-if="loading" class="v2-state" role="status">正在查找这个月的记录…</div>
+          <div v-else-if="error" class="v2-state" role="alert">
+            <p>{{ error }}</p><button type="button" @click="loadArticles">重新加载记录</button>
+          </div>
+          <template v-else>
+            <p class="topics-note" role="status">{{ selectedMonth }} · 共 {{ total }} 篇{{ diary ? '公开日记' : '公开记录' }}</p>
+            <div v-if="!articles.length" class="v2-state">这个月暂时没有公开记录。</div>
+            <ol v-else class="timeline-items">
+              <li v-for="article in articles" :key="article.id">
+                <time :datetime="article.publishedAt">{{ article.publishedAt?.slice(5, 10) }}</time>
+                <div>
+                  <span v-if="!diary" class="timeline-kind">{{ names[article.type] ?? '记录' }}</span>
+                  <h3><RouterLink :to="articleLocation(article)">{{ article.title }}</RouterLink></h3>
+                  <!-- 日记只展示纯文本摘要，正文仍进入既有阅读页，不在列表展开私密内容。 -->
+                  <p v-if="diary && article.summary">{{ article.summary }}</p>
+                  <RouterLink class="timeline-read" :to="articleLocation(article)">{{ diary ? '阅读这一天 →' : '阅读记录 →' }}</RouterLink>
+                </div>
+              </li>
+            </ol>
+            <ArticlePagination :page="page" :total-pages="totalPages" :loading="loading" @change="changePage" />
+          </template>
+        </section>
       </div>
-      <label v-if="months.length">
-        归档月份
-        <select v-model="selectedMonth" @change="changeMonth">
-          <optgroup v-for="group in yearGroups" :key="group.year" :label="`${group.year} 年`">
-            <option v-for="item in group.months" :key="item.month" :value="item.month">
-              {{ item.month }}（{{ item.total }} 篇）
-            </option>
-          </optgroup>
-        </select>
-      </label>
-    </div>
-
-    <p v-if="loading" role="status">正在加载归档…</p>
-    <div v-else-if="error">
-      <p class="error" role="alert">{{ error }}</p>
-      <button type="button" @click="loadArchive">重新加载归档</button>
-    </div>
-    <p v-else-if="months.length === 0">暂时没有已发布的文章。</p>
-    <div v-else>
-      <p role="status">{{ selectedMonth }} · 共 {{ total }} 篇文章</p>
-      <p v-if="articles.length === 0">这个月暂时没有已发布的文章。</p>
-      <ul v-else class="archive-list">
-        <li v-for="article in articles" :key="article.id">
-          <RouterLink :to="`/articles/${article.id}`">
-            <time :datetime="article.publishedAt">{{ article.publishedAt?.slice(0, 10) }}</time>
-            <span>{{ article.title }}</span>
-          </RouterLink>
-        </li>
-      </ul>
-      <nav v-if="totalPages > 0" class="archive-pagination" aria-label="归档分页">
-        <button type="button" :disabled="page <= 1" @click="changePage(page - 1)">上一页</button>
-        <span aria-live="polite">第 {{ page }} / {{ totalPages }} 页</span>
-        <button type="button" :disabled="page >= totalPages" @click="changePage(page + 1)">下一页</button>
-      </nav>
-    </div>
+    </template>
   </section>
 </template>
-
-<style scoped>
-.archive-list {
-  padding: 0;
-  list-style: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-}
-.archive-list li + li { border-top: 1px solid var(--color-border); }
-.archive-list a { display: flex; align-items: baseline; gap: 16px; padding: 18px 20px; color: var(--color-text); }
-.archive-list a:hover { color: var(--color-accent); }
-.archive-list time { flex: 0 0 auto; color: var(--color-muted); font-family: Consolas, monospace; }
-.archive-list span { min-width: 0; overflow-wrap: anywhere; }
-.archive-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
-@media (max-width: 600px) {
-  .archive-list a { flex-direction: column; gap: 6px; }
-}
-</style>

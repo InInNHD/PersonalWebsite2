@@ -67,18 +67,31 @@ public class ArticleController {
 
     @GetMapping("/archive")
     @Transactional(readOnly = true)
-    public List<ArchiveMonth> archive() {
+    public List<ArchiveMonth> archive(
+            @RequestParam(name = "type", required = false) String type) {
+        // 不传type时保留全部公开文章目录；日记页面传DIARY。
+        // 参数经过校验并绑定到占位符，不把输入拼成SQL。
+        if (type != null && !Set.of("NOTE", "THOUGHT", "DIARY").contains(type)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的文章类型");
+        }
         String sql = """
             SELECT DATE_FORMAT(published_at, '%Y-%m') AS archive_month,
                    COUNT(*) AS article_count
             FROM article
             WHERE status = 'PUBLISHED' AND published_at IS NOT NULL
-            GROUP BY DATE_FORMAT(published_at, '%Y-%m')
-            ORDER BY archive_month DESC
             """;
-        // 数据库先按年月聚合，目录只返回月份和数量，不加载全文。
+        List<Object> parameters = new ArrayList<>();
+        if (type != null) {
+            sql += " AND type = ?";
+            parameters.add(type);
+        }
+        sql += """
+             GROUP BY DATE_FORMAT(published_at, '%Y-%m')
+             ORDER BY archive_month DESC
+            """;
+        // 只返回月份及公开数量；草稿即使带日期也不会进入目录。
         return jdbcTemplate.query(sql, (rs, rowNum) -> new ArchiveMonth(
-                rs.getString("archive_month"), rs.getLong("article_count")));
+                rs.getString("archive_month"), rs.getLong("article_count")), parameters.toArray());
     }
 
     @GetMapping

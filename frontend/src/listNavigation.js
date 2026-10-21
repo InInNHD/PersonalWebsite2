@@ -24,16 +24,47 @@ export function listQuery(query = {}) {
     return result // 默认第一页和空条件省略，网址更短。
 }
 
-export const listKey = route => new URLSearchParams(listQuery(route.query)).toString()
-export const listHash = hash => ['#entries', '#article-search'].includes(hash) ? hash : ''
+// 主题页仅支持kind/id/page。成对合法才选中主题；非法值回到目录。
+export function topicQuery(query = {}) {
+    const kind = first(query.kind)
+    const id = positiveId(query.id)
+    if (!['category', 'tag'].includes(kind) || !id) return {}
+    const result = { kind, id }
+    const page = listQuery({ page: query.page }).page
+    if (page) result.page = page
+    return result
+}
 
-// 正文的返回地址只允许本网站首页。外部地址、其他页面和异常参数回退。
+// 归档和日记只接受月份和页码；不带月份时使用最新公开月份。
+export function archiveQuery(query = {}) {
+    const result = {}
+    const month = String(first(query.month) ?? '')
+    if (/^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(month)) result.month = month
+    const page = listQuery({ page: query.page }).page
+    if (result.month && page) result.page = page
+    return result
+}
+
+const isList = path => ['/', '/topics', '/archive', '/diary'].includes(path)
+export function pageQuery(path, query) {
+    if (path === '/topics') return topicQuery(query)
+    if (path === '/archive' || path === '/diary') return archiveQuery(query)
+    return listQuery(query)
+}
+// 首页已有调用只传query；缺少path时继续按首页处理。
+export const listKey = route => (['/topics', '/archive', '/diary'].includes(route.path) ? route.path.slice(1) + '?' : '')
+    + new URLSearchParams(pageQuery(route.path, route.query)).toString()
+export const listHash = hash => ['#entries', '#article-search'].includes(hash) ? hash : ''
+export const pageHash = (path, hash) => path === '/' ? listHash(hash) : (hash === '#entries' ? hash : '')
+
+// 正文的返回地址只允许本站首页、主题、归档和日记页。外部地址、其他页面和异常参数回退。
 export function listReturn(raw) {
     if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return { path: '/' }
     try {
         const url = new URL(raw, 'https://list.invalid')
-        if (url.origin !== 'https://list.invalid' || url.pathname !== '/') return { path: '/' }
-        return { path: '/', query: listQuery(Object.fromEntries(url.searchParams)), hash: listHash(url.hash) }
+        if (url.origin !== 'https://list.invalid' || !isList(url.pathname)) return { path: '/' }
+        return { path: url.pathname, query: pageQuery(url.pathname, Object.fromEntries(url.searchParams)),
+            hash: pageHash(url.pathname, url.hash) }
     } catch {
         return { path: '/' }
     }
@@ -52,10 +83,10 @@ export function rememberList(route, position) {
 // 这样浏览器后退时，savedPosition不会在加载提示阶段被截断。
 let pending = null
 export function prepareList(to, from) {
-    if (to.path === '/' && from.path === '/' && from.matched?.length && listKey(to) === listKey(from)) return
+    if (isList(to.path) && from.path === to.path && from.matched?.length && listKey(to) === listKey(from)) return
     pending?.resolve() // 离开或更换目标时释放旧等待者。
     pending = null
-    if (to.path === '/') {
+    if (isList(to.path)) {
         let resolve
         const promise = new Promise(done => { resolve = done })
         pending = { key: listKey(to), promise, resolve }
@@ -68,7 +99,7 @@ export async function finishList(key) {
 }
 
 export async function listScroll(to, from, savedPosition, currentRoute) {
-    if (to.path === '/') {
+    if (isList(to.path)) {
         const task = pending
         if (task?.key === listKey(to)) await task.promise
         await nextTick()
@@ -80,8 +111,13 @@ export async function listScroll(to, from, savedPosition, currentRoute) {
             const origin = listReturn(from.query.from)
             if (listKey(origin) === listKey(to)) return positions.get(listKey(to)) ?? { el: '#entries', top: 24 }
         }
+        // 回到主题总目录时显示目录顶部，不停在下方的选择提示处。
+        if (to.path === '/topics' && !topicQuery(to.query).id && !to.hash) return { top: 0 }
+        // 初始化补上最新月份时留在页头；主动选择月份才定位时间线。
+        if (['/archive', '/diary'].includes(to.path) && from.path === to.path
+            && !archiveQuery(from.query).month && !to.hash) return { top: 0 }
         if (to.hash) return { el: to.hash, top: 24 }
-        if (from.path === '/' && listKey(to) !== listKey(from)) return { el: '#entries', top: 24 }
+        if (from.path === to.path && isList(from.path) && listKey(to) !== listKey(from)) return { el: '#entries', top: 24 }
     }
     return savedPosition ?? { top: 0 }
 }

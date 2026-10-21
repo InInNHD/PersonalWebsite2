@@ -266,3 +266,136 @@ a.reading-neighbor:focus-visible { outline: 2px solid var(--color-accent); outli
     .reading-neighbor {
         padding: 17px;}
 }
+
+/* 第四轮4A：公开分类/标签目录与落地页。 */
+.topics-page { padding-bottom: 36px; min-width: 0; }
+.topics-heading { max-width: 750px; padding: 12px 0 30px; }
+.topics-heading h1 { font-size: clamp(32px, 4vw, 46px); margin: 14px 0; }
+.topics-heading > p:last-child { color: var(--color-muted); line-height: 1.9; }
+.topics-directory { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.topics-directory > section { min-width: 0; padding: 24px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.topics-directory h2 { margin: 0 0 20px; font-size: 20px; }
+.topics-directory h2 small { margin-left: 8px; font-size: 12px; color: var(--color-muted); }
+.topics-directory p, .topics-note { color: var(--color-muted); font-size: 13px; line-height: 1.8; }
+.topic-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.topic-links a { min-width: 0; display: inline-flex; align-items: center; gap: 14px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); }
+.topic-links span { overflow-wrap: anywhere; }
+.topic-links small { color: var(--color-muted); white-space: nowrap; }
+.topic-links a[aria-current="page"], .topic-links a:hover { border-color: var(--color-accent); background: var(--color-accent-soft); text-decoration: none; }
+.topics-results { padding-top: 36px; margin-top: 28px; border-top: 1px solid var(--color-border); scroll-margin-top: 24px; }
+.topics-result-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.topics-result-heading h2 { margin: 8px 0 0; font-size: 26px; overflow-wrap: anywhere; }
+.topics-result-heading > a { flex: none; min-height: 44px; display: inline-flex; align-items: center; font-size: 13px; }
+.v2-tags a { display: inline-flex; align-items: center; min-height: 32px; color: var(--color-accent); font-size: 11px; padding: 4px 7px; border-radius: 5px; background: var(--color-accent-soft); overflow-wrap: anywhere; }
+.v2-meta > a { color: var(--color-muted); }
+a.reading-tag { display: inline-flex; align-items: center; min-height: 36px; }
+@media (max-width: 700px) {
+    .topics-directory { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .topics-directory > section { padding: 20px; }
+    .topics-result-heading { align-items: start; flex-direction: column; gap: 8px; }
+}
+
+/* 第四轮4B：归档与公开日记共用时间导航，日记使用更轻的摘要样式。 */
+.timeline-heading { max-width: 760px; padding: 12px 0 30px; }
+.timeline-heading h1 { margin: 14px 0; font-size: clamp(32px, 4vw, 46px); }
+.timeline-heading > p:last-of-type { color: var(--color-muted); line-height: 1.9; }
+.timeline-heading > a { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; }
+.timeline-total { color: var(--color-muted); font-size: 13px; margin: 0 0 28px; }
+.timeline-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; align-items: start; }
+.timeline-months { min-width: 0; padding: 22px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; }
+.timeline-year + .timeline-year { margin-top: 26px; }
+.timeline-year h2 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-size: 21px; }
+.timeline-year small { color: var(--color-muted); font-size: 12px; font-weight: 400; }
+.timeline-year a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 8px 10px; border-radius: 7px; color: var(--color-muted); }
+.timeline-year a[aria-current="page"], .timeline-year a:hover { color: var(--color-accent); background: var(--color-accent-soft); text-decoration: none; }
+.timeline-month-select { display: none; }
+.timeline-results { min-width: 0; scroll-margin-top: 24px; }
+.timeline-results > header h2 { margin: 10px 0 24px; font-size: 28px; }
+.timeline-items { padding: 0; margin: 28px 0; list-style: none; }
+.timeline-items > li { position: relative; display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 24px; padding: 0 0 28px; }
+.timeline-items > li::before { content: ''; position: absolute; top: 8px; bottom: -8px; left: 78px; width: 1px; background: var(--color-border); }
+.timeline-items > li:last-child::before { bottom: 28px; }
+.timeline-items > li::after { content: ''; position: absolute; left: 75px; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); }
+.timeline-items time { color: var(--color-muted); font: 13px/1.8 Consolas, monospace; }
+.timeline-items h3 { font-size: 20px; line-height: 1.6; margin: 5px 0 10px; overflow-wrap: anywhere; }
+.timeline-items h3 a { color: var(--color-text); }
+.timeline-items h3 a:hover { color: var(--color-accent); }
+.timeline-kind { color: var(--color-muted); font-size: 11px; }
+.timeline-read { display: inline-flex; min-height: 36px; align-items: center; font-size: 12px; }
+.is-diary .timeline-items > li > div { background: var(--color-surface); border: 1px solid var(--color-border); padding: 20px 24px; border-radius: 12px; }
+.is-diary .timeline-items h3 { font-size: 21px; margin-top: 0; }
+.is-diary .timeline-items p { color: var(--color-muted); font-size: 14px; line-height: 1.9; white-space: pre-line; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+    .timeline-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .timeline-months { padding: 18px; }
+    .timeline-month-select { display: grid; gap: 10px; font-size: 13px; color: var(--color-muted); }
+    .timeline-month-select select { min-width: 0; width: 100%; }
+    .timeline-year { display: none; }
+    .timeline-items > li { grid-template-columns: 48px minmax(0, 1fr); gap: 22px; }
+    .timeline-items > li::before { left: 57px; }
+    .timeline-items > li::after { left: 54px; }
+    .timeline-items time { font-size: 11px; }
+    .timeline-items h3 { font-size: 18px; }
+    .is-diary .timeline-items > li > div { padding: 16px; }
+    .is-diary .timeline-items h3 { font-size: 18px; }
+}
+
+/* 第四轮4C：个人介绍、公开项目和有来源的更新链。 */
+.profile-avatar { display: inline-grid; place-items: center; overflow: hidden; flex: none; background: #263e34; color: var(--color-accent); }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.about-v2 { min-width: 0; }
+.about-intro { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 64px; align-items: center; padding: 18px 0 48px; }
+.about-portrait { padding: 38px 30px; border: 1px solid var(--color-border); border-radius: 18px; background: linear-gradient(145deg, #1e332c, var(--color-surface)); text-align: center; }
+.about-portrait .profile-avatar { width: 150px; height: 150px; border: 1px solid #577367; border-radius: 50%; font: italic 100px Georgia, serif; }
+.about-portrait p { font-size: 10px; letter-spacing: 2px; margin: 28px 0 16px; }
+.about-portrait-copy { display: block; font-size: 13px; color: var(--color-muted); line-height: 1.9; }
+.about-introduction h1 { margin: 14px 0 22px; font-size: clamp(30px, 3.8vw, 46px); line-height: 1.3; overflow-wrap: anywhere; }
+.about-introduction h1 span { color: var(--color-accent); }
+.about-introduction > p:not(.v2-eyebrow) { color: var(--color-muted); line-height: 1.9; overflow-wrap: anywhere; }
+.about-introduction .about-tagline { font-size: 18px; color: var(--color-text); }
+.about-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 24px; }
+.about-actions a { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; overflow-wrap: anywhere; }
+.about-section { border-top: 1px solid var(--color-border); padding: 40px 0; min-width: 0; }
+.about-section h2 { margin: 10px 0 24px; font-size: 28px; scroll-margin-top: 24px; }
+.about-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; }
+.about-section-heading > span, .about-source { font-size: 12px; color: var(--color-muted); line-height: 1.9; }
+.about-section-heading > span { padding-bottom: 24px; }
+.about-languages { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.about-languages span, .about-update-meta > span:first-child { font-size: 11px; padding: 4px 8px; background: var(--color-accent-soft); border-radius: 5px; color: var(--color-accent); }
+.about-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.about-project, .about-info-card { min-width: 0; padding: 26px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.about-project { display: flex; flex-direction: column; }
+.about-project-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--color-muted); }
+.about-project h3, .about-info-card h3 { margin: 16px 0 12px; font-size: 22px; overflow-wrap: anywhere; }
+.about-project h3 a { color: var(--color-text); }
+.about-project > p, .about-info-card p { font-size: 14px; color: var(--color-muted); line-height: 1.9; overflow-wrap: anywhere; }
+.about-project footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 18px; }
+.about-project footer small { color: var(--color-muted); font-size: 11px; }
+.about-project footer button { font-size: 12px; }
+.about-history-note { padding: 14px 18px; margin: 18px 0; border: 1px solid var(--color-border); border-radius: 9px; font-size: 12px; color: var(--color-muted); line-height: 1.9; }
+.about-history-note summary { cursor: pointer; }
+.about-update-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 20px; margin: 24px 0; }
+.about-update-filters label { display: grid; gap: 8px; min-width: 180px; max-width: 100%; font-size: 12px; color: var(--color-muted); }
+.about-update-filters select { min-width: 0; max-width: 100%; }
+.about-update-filters p { margin: 0 0 10px; color: var(--color-muted); font-size: 12px; }
+.about-updates { list-style: none; padding: 0; margin: 30px 0; }
+.about-updates li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 28px; border-bottom: 1px solid var(--color-border); padding: 24px 0; }
+.about-updates time { color: var(--color-muted); font-size: 13px; line-height: 1.9; }
+.about-updates time small { display: block; font-size: 11px; }
+.about-update-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--color-muted); font-size: 11px; overflow-wrap: anywhere; }
+.about-updates h3 { margin: 12px 0 0; font-size: 17px; line-height: 1.8; overflow-wrap: anywhere; }
+.about-updates h3 a { color: var(--color-text); }
+.about-explore { display: flex; flex-wrap: wrap; gap: 16px 32px; padding: 24px 0 40px; border-top: 1px solid var(--color-border); }
+.about-explore a { min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; }
+@media (max-width: 800px) { .about-intro { grid-template-columns: 230px minmax(0, 1fr); gap: 32px; } }
+@media (max-width: 600px) {
+    .about-intro, .about-grid { grid-template-columns: minmax(0, 1fr); }
+    .about-intro { gap: 28px; }
+    .about-portrait { padding: 28px; }
+    .about-portrait .profile-avatar { width: 110px; height: 110px; font-size: 74px; }
+    .about-section-heading { align-items: start; flex-direction: column; gap: 0; }
+    .about-update-filters { display: grid; grid-template-columns: minmax(0, 1fr); }
+    .about-update-filters label { min-width: 0; }
+    .about-updates li { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .about-updates time small { display: inline; margin-left: 12px; }
+}

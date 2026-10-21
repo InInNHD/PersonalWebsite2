@@ -5,6 +5,7 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { finishList, listKey, listQuery, rememberList } from '../listNavigation.js'
 import ArticleCard from '../components/ArticleCard.vue'
 import SiteStats from '../components/SiteStats.vue'
+import ProfileAvatar from '../components/ProfileAvatar.vue'
 import ArticlePagination from '../components/ArticlePagination.vue'
 import heroArt from '../assets/hero.svg'
 
@@ -136,46 +137,22 @@ function changePage(nextPage) {
   return navigateList()
 }
 
-async function loadCategories() {
+// 首页只展示被公开文章使用的分类和标签；管理端保留原全量接口。
+async function loadTopics() {
+  categoryError.value = ''
+  tagError.value = ''
   try {
-    const response = await fetch('/api/categories')
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    const data = await response.json()
-
-    if (disposed) return
-
-    articleCategories.value = data
-  } catch {
-    if (disposed) return
-
-    // 分类加载失败不会阻止文章列表显示。
-    categoryError.value = '分类加载失败，请刷新页面重试。'
-  }
-}
-
-async function loadTags() {
-  try {
-    const response = await fetch('/api/tags')
+    const response = await fetch('/api/topics')
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
     const data = await response.json()
-
-    // 页面已卸载时，丢弃尚未完成的标签加载结果。
     if (disposed) return
-    tags.value = data
+    articleCategories.value = data.categories
+    tags.value = data.tags
   } catch {
-    if (disposed) return
-    tagError.value = '标签加载失败，请刷新页面重试。'
+    if (!disposed) categoryError.value = '主题加载失败，文章仍可阅读；请刷新页面重试。'
   }
 }
-
-onMounted(loadCategories)
-
-onMounted(loadTags)
+onMounted(loadTopics)
 
 // 直接打开链接、刷新、后退/前进都走同一入口。
 // 只观察查询条件；展开搜索面板等纯锚点变化不应重新请求文章。
@@ -206,12 +183,6 @@ function selectType(value) {
   return applyFilters()
 }
 
-function selectTag(id) {
-  tagId.value = id
-  filtersExpanded.value = true
-  return applyFilters()
-}
-
 function selectCategory(id) {
   categoryId.value = id
   filtersExpanded.value = true
@@ -237,7 +208,7 @@ function clearAll() {
         <p class="v2-hero-copy">你好，我是 {{ siteProfile.nickname }}。<br>{{ siteProfile.heroDescription }}</p>
         <div class="v2-hero-actions">
           <a class="v2-action primary" href="#entries" @click.prevent="selectType('NOTE')">阅读笔记 →</a>
-          <a class="v2-action" href="#entries" @click.prevent="selectType('DIARY')">浏览日记</a>
+          <RouterLink class="v2-action" to="/diary">浏览日记</RouterLink>
         </div>
         <p class="v2-hero-sign">LEARN SOMETHING. KEEP A LITTLE LIGHT.</p>
       </div>
@@ -307,14 +278,14 @@ function clearAll() {
         </div>
         <div v-else class="v2-grid">
           <ArticleCard v-for="(article, index) in articles" :key="article.id" :article="article"
-                       :featured="page === 1 && index === 0" :return-to="route.fullPath" @select-tag="selectTag" />
+                       :featured="page === 1 && index === 0" :return-to="route.fullPath" />
         </div>
         <ArticlePagination v-if="!error" :page="page" :total-pages="totalPages" :loading="loading" @change="changePage" />
       </section>
 
       <aside class="v2-sidebar" aria-label="作者与内容导航">
         <section class="v2-profile">
-          <span class="v2-avatar" aria-hidden="true">f</span>
+          <ProfileAvatar class="v2-avatar" />
           <h2>{{ siteProfile.nickname }}</h2>
           <span class="v2-eyebrow">LEARNING IN PUBLIC</span>
           <p>{{ siteProfile.profileDescription }}</p>
@@ -326,9 +297,11 @@ function clearAll() {
         </section>
         <section class="v2-side-links">
           <h3>在这里探索</h3>
+          <RouterLink to="/topics">分类与标签 <span aria-hidden="true">→</span></RouterLink>
           <a v-for="category in articleCategories" :key="category.id" href="#entries"
              @click.prevent="selectCategory(category.id)">{{ category.name }} <span aria-hidden="true">→</span></a>
           <RouterLink to="/archive">浏览归档 <span aria-hidden="true">→</span></RouterLink>
+          <RouterLink to="/diary">公开日记 <span aria-hidden="true">→</span></RouterLink>
           <RouterLink to="/resources">资源收藏 <span aria-hidden="true">→</span></RouterLink>
         </section>
         <p class="v2-side-note">不必一次照亮整条路，<br>记住今天走过的这一段。</p>

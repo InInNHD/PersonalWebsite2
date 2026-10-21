@@ -11,7 +11,6 @@ const props = defineProps({
   // 正文链接携带当前列表网址，刷新详情后仍可返回相同条件。
   returnTo: { type: String, default: '/' },
 })
-const emit = defineEmits(['select-tag'])
 const names = { NOTE: '笔记', THOUGHT: '心得', DIARY: '日记' }
 const covers = { NOTE: noteCover, THOUGHT: thoughtCover, DIARY: diaryCover }
 // 自定义封面加载失败时回退到栏目图；切换地址后允许重新尝试。
@@ -33,7 +32,7 @@ const path = computed(() => ({ path: `/articles/${props.article.id}`, query: { f
            referrerpolicy="no-referrer" @error="coverFailed = true">
     </RouterLink>
     <div class="v2-post-body">
-      <div class="v2-meta"><span v-if="article.pinned" class="v2-pin">置顶</span><span class="v2-badge">{{ names[article.type] ?? '文章' }}</span><span>{{ article.categoryName ?? '未分类' }}</span></div>
+      <div class="v2-meta"><span v-if="article.pinned" class="v2-pin">置顶</span><span class="v2-badge">{{ names[article.type] ?? '文章' }}</span><RouterLink v-if="article.categoryId != null" :to="{ path: '/topics', query: { kind: 'category', id: String(article.categoryId) }, hash: '#entries' }">{{ article.categoryName }}</RouterLink><span v-else>未分类</span></div>
       <h3><RouterLink :to="path">{{ article.title }}</RouterLink></h3>
       <p class="v2-summary">{{ article.summary || '打开文章，继续阅读。' }}</p>
       <time class="v2-meta" :datetime="article.publishedAt">{{ article.publishedAt?.slice(0, 10) ?? '发布时间未记录' }}</time>
@@ -42,9 +41,9 @@ const path = computed(() => ({ path: `/articles/${props.article.id}`, query: { f
       </time>
       <div class="v2-post-bottom">
         <div class="v2-tags" aria-label="文章标签">
-          <!-- 卡片不是整块链接，因此标签按钮不会嵌套在文章链接里。 -->
-          <button v-for="tag in article.tags ?? []" :key="tag.id" type="button"
-                  @click="emit('select-tag', tag.id)">#{{ tag.name }}</button>
+          <!-- 分类/标签各自是链接，不嵌套在文章链接中。 -->
+          <RouterLink v-for="tag in article.tags ?? []" :key="tag.id"
+                      :to="{ path: '/topics', query: { kind: 'tag', id: String(tag.id) }, hash: '#entries' }">#{{ tag.name }}</RouterLink>
         </div>
         <RouterLink :to="path" class="v2-read-more" :aria-label="`阅读全文：${article.title}`">→</RouterLink>
       </div>

@@ -1,4 +1,4 @@
-// 这里只放愿意在网站上公开的文字；由三个页面共同引用。
+// 这里只放愿意公开的资料；首页、关于页和页脚共同引用。
 // 普通对象足够，内容修改后 Vite 会重新加载，不需要 ref 或后台接口。
 export const siteProfile = {
     siteName: '萤火手记',
@@ -15,5 +15,11 @@ export const siteProfile = {
     ],
     // 暂未确定的信息留空，不生成占位链接。
     githubName: 'InInNHD',
-    githubUrl: 'https://github.com/InInNHD/PersonalWebsite2',
+    githubUrl: 'https://github.com/InInNHD',
+    // 可填public中的相对站点路径，例如/images/avatar.webp；空或加载失败时用字母标识。
+    avatarUrl: '',
+    // 没有提供真实资料就留空，关于页隐藏对应区块。
+    learningDirections: [],
+    experiences: [],
+    contactLinks: [],
 }

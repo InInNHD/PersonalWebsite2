@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { listHash, listQuery, listScroll, prepareList } from './listNavigation.js'
+import { listScroll, pageHash, pageQuery, prepareList } from './listNavigation.js'
 import { prepareReading, readingScroll } from './readingNavigation.js'
 import App from './App.vue'
 import ArticleListView from './views/ArticleListView.vue'
@@ -12,6 +12,7 @@ import AdminView from './views/AdminView.vue'
 import ResourceView from './views/ResourceView.vue'
 import ArchiveView from './views/ArchiveView.vue'
 import AboutView from './views/AboutView.vue'
+import TopicView from './views/TopicView.vue'
 
 // 首页显示文章列表；点击文章后通过 id 打开详情。
 const router = createRouter({
@@ -26,7 +27,9 @@ const router = createRouter({
     routes: [
         { path: '/', component: ArticleListView },
         { path: '/articles/:id', component: ArticleDetailView },
+        { path: '/topics', component: TopicView },
         { path: '/archive', component: ArchiveView },
+        { path: '/diary', component: ArchiveView },
         { path: '/resources', component: ResourceView },
         { path: '/about', component: AboutView },
         { path: '/admin', component: AdminView },
@@ -36,11 +39,11 @@ const router = createRouter({
 
 // 非法值、重复参数和未知参数统一清理；replace不额外增加浏览器历史。
 router.beforeEach(to => {
-    if (to.path !== '/') return
-    const query = listQuery(to.query)
-    const hash = listHash(to.hash)
+    if (!['/', '/topics', '/archive', '/diary'].includes(to.path)) return
+    const query = pageQuery(to.path, to.query)
+    const hash = pageHash(to.path, to.hash)
     if (JSON.stringify(to.query) !== JSON.stringify(query) || to.hash !== hash) {
-        return { path: '/', query, hash, replace: true }
+        return { path: to.path, query, hash, replace: true }
     }
 })
 router.beforeResolve((to, from) => {

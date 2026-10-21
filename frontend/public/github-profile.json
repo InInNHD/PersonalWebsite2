@@ -1,0 +1,1314 @@
+{
+  "schemaVersion": 1,
+  "owner": "InInNHD",
+  "syncedAt": "2026-10-20T16:57:36.828Z",
+  "projects": [
+    {
+      "id": "1394822311",
+      "fullName": "InInNHD/PersonalWebsite2",
+      "name": "PersonalWebsite2",
+      "description": "个人网站第二版",
+      "url": "https://github.com/InInNHD/PersonalWebsite2",
+      "language": "Java",
+      "fork": false,
+      "archived": false,
+      "createdAt": "2026-09-29T09:25:23Z",
+      "pushedAt": "2026-10-19T02:39:48Z"
+    },
+    {
+      "id": "1403013902",
+      "fullName": "InInNHD/dsh-recheck",
+      "name": "dsh-recheck",
+      "description": "Unofficial DSH plugin: bind conclusions to evidence files and revisit them when files change. 原生侧栏与结论复核历史。",
+      "url": "https://github.com/InInNHD/dsh-recheck",
+      "language": "JavaScript",
+      "fork": false,
+      "archived": false,
+      "createdAt": "2026-10-03T10:38:54Z",
+      "pushedAt": "2026-10-14T07:00:16Z"
+    },
+    {
+      "id": "1351323838",
+      "fullName": "InInNHD/fireflyiv-blog",
+      "name": "fireflyiv-blog",
+      "description": "个人博客",
+      "url": "https://github.com/InInNHD/fireflyiv-blog",
+      "language": "TypeScript",
+      "fork": false,
+      "archived": false,
+      "createdAt": "2026-08-30T11:03:24Z",
+      "pushedAt": "2026-09-19T01:33:54Z"
+    },
+    {
+      "id": "1312649957",
+      "fullName": "InInNHD/Community-healthcare-system",
+      "name": "Community-healthcare-system",
+      "description": "社区医疗服务平台管理系统 ;关键词：社区医疗；管理信息系统；公共卫生；Spring Boot/Community Healthcare Service Platform Management System; Keywords: Community Medical Care; Management Information System;  Public Health management; Spring Boot",
+      "url": "https://github.com/InInNHD/Community-healthcare-system",
+      "language": "Java",
+      "fork": false,
+      "archived": false,
+      "createdAt": "2026-07-26T09:05:51Z",
+      "pushedAt": "2026-09-03T15:57:40Z"
+    },
+    {
+      "id": "1349550250",
+      "fullName": "InInNHD/starticket",
+      "name": "starticket",
+      "description": "StarTicket 城市演出票务平台  面向城市演出与校园活动的 Java 票务交易平台，完整实现“活动发布 → 选座锁座 → 下单支付 → 电子票 → 入场核销 → 取消退款”，重点验证并发一致性、接口幂等和消息可靠性。",
+      "url": "https://github.com/InInNHD/starticket",
+      "language": "Java",
+      "fork": false,
+      "archived": false,
+      "createdAt": "2026-08-28T11:52:56Z",
+      "pushedAt": "2026-09-03T10:08:46Z"
+    },
+    {
+      "id": "1350501258",
+      "fullName": "InInNHD/Logistics",
+      "name": "Logistics",
+      "description": "一个面向中小型仓库的仓储物流管理系统",
+      "url": "https://github.com/InInNHD/Logistics",
+      "language": "Java",
+      "fork": false,
+      "archived": false,
+      "createdAt": "2026-08-29T10:46:30Z",
+      "pushedAt": "2026-08-30T06:15:48Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "release:416851245",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-19T02:40:08Z",
+      "title": "v0.8.0 — 文章阅读体验与连续阅读",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.8.0"
+    },
+    {
+      "id": "commit:1394822311:bee1ca91fb4c51e56bcbdb820bc99bb155f7a68f",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-19T02:39:37Z",
+      "title": "feat: 完成文章阅读目录媒体交互与连续阅读",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/bee1ca91fb4c51e56bcbdb820bc99bb155f7a68f"
+    },
+    {
+      "id": "release:415971133",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-17T17:53:11Z",
+      "title": "v0.7.0 — 第二版首页、文章展示与列表导航",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.7.0"
+    },
+    {
+      "id": "push:24522697646",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-17T17:52:47Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/5c24d4c2eb7163f1b39eb497fa3df497d53f9e28...beef2dc49d930fd9dea8d1f07b3b3f99e8789939"
+    },
+    {
+      "id": "commit:1394822311:beef2dc49d930fd9dea8d1f07b3b3f99e8789939",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-17T17:52:39Z",
+      "title": "feat: 完成第二版首页文章展示与列表导航",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/beef2dc49d930fd9dea8d1f07b3b3f99e8789939"
+    },
+    {
+      "id": "release:413314632",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-15T01:00:41Z",
+      "title": "v0.6.0 — 文章归档、个人介绍与暗色响应式布局",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.6.0"
+    },
+    {
+      "id": "push:24159368991",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-15T01:00:16Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/2d7be4d276d9403edea3cdb53e77fcaded90b5df...5c24d4c2eb7163f1b39eb497fa3df497d53f9e28"
+    },
+    {
+      "id": "commit:1394822311:5c24d4c2eb7163f1b39eb497fa3df497d53f9e28",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-15T01:00:07Z",
+      "title": "feat: 新增文章归档个人介绍及暗色响应式布局",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/5c24d4c2eb7163f1b39eb497fa3df497d53f9e28"
+    },
+    {
+      "id": "release:412425082",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-14T07:01:08Z",
+      "title": "Recheck 0.1.0 — Stable release with disclosed trial limits",
+      "prerelease": false,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0"
+    },
+    {
+      "id": "push:23931711811",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-14T02:08:17Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/a4093e4fad7944110c25c2e93a23f470700b3f21...62a100b6be3d38ce8832f008841ae7f1a7aaaf00"
+    },
+    {
+      "id": "commit:1403013902:62a100b6be3d38ce8832f008841ae7f1a7aaaf00",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-14T02:08:15Z",
+      "title": "release: publish Recheck 0.1.0 (#5)",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/62a100b6be3d38ce8832f008841ae7f1a7aaaf00"
+    },
+    {
+      "id": "push:23931031170",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-14T01:56:58Z",
+      "title": "推送到 codex/prepare-0.1.0",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/fab91516cfbb18338e9f9f1ad01586dd3772a55b...ffa04bbe5ec704be01ef4d365f7ea45d543fd59c"
+    },
+    {
+      "id": "release:408532529",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-10T02:18:23Z",
+      "title": "v0.5.0 — 文章搜索与分页",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.5.0"
+    },
+    {
+      "id": "push:23694414949",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-10T02:17:56Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/6d0532c455729755bf0b04dd213f6d020b3ee241...2d7be4d276d9403edea3cdb53e77fcaded90b5df"
+    },
+    {
+      "id": "commit:1394822311:2d7be4d276d9403edea3cdb53e77fcaded90b5df",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-10T02:17:47Z",
+      "title": "feat: 新增文章搜索与分页并完成发布验收",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/2d7be4d276d9403edea3cdb53e77fcaded90b5df"
+    },
+    {
+      "id": "release:406669848",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-08T09:45:52Z",
+      "title": "v0.4.0 — 栏目、分类与标签组合筛选",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.4.0"
+    },
+    {
+      "id": "push:23463936204",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-08T09:45:21Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/f63089debf35deb35e306d19e9ced0ff82b2303d...6d0532c455729755bf0b04dd213f6d020b3ee241"
+    },
+    {
+      "id": "commit:1394822311:6d0532c455729755bf0b04dd213f6d020b3ee241",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-08T09:45:13Z",
+      "title": "feat: 支持栏目分类标签组合筛选并完成页面验收",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/6d0532c455729755bf0b04dd213f6d020b3ee241"
+    },
+    {
+      "id": "release:406371568",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-08T03:14:46Z",
+      "title": "v0.3.0 — 标签管理与完整数据库初始化",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.3.0"
+    },
+    {
+      "id": "push:23333808354",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-08T03:14:13Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/6f41220af0cb95631088e60da10e0307a4c3e767...f63089debf35deb35e306d19e9ced0ff82b2303d"
+    },
+    {
+      "id": "commit:1394822311:f63089debf35deb35e306d19e9ced0ff82b2303d",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-08T03:14:06Z",
+      "title": "feat: 新增文章多标签并补齐数据库初始化和发布说明",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/f63089debf35deb35e306d19e9ced0ff82b2303d"
+    },
+    {
+      "id": "push:23254402535",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-06T07:34:35Z",
+      "title": "推送到 codex/prepare-0.1.0",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/7315f249bedf4853d6949320d0be1f4652a10b2d...fab91516cfbb18338e9f9f1ad01586dd3772a55b"
+    },
+    {
+      "id": "release:403940704",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-05T17:09:08Z",
+      "title": "Recheck 0.1.0-beta.1 — Review queue",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0-beta.1"
+    },
+    {
+      "id": "push:23080569762",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-05T16:56:06Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/51dcff2314e5319f35aa8fdc4bc6d8d784fc0925...a4093e4fad7944110c25c2e93a23f470700b3f21"
+    },
+    {
+      "id": "commit:1403013902:a4093e4fad7944110c25c2e93a23f470700b3f21",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-05T16:56:03Z",
+      "title": "feat: add beta.1 review queue and publish current demo (#4)",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/a4093e4fad7944110c25c2e93a23f470700b3f21"
+    },
+    {
+      "id": "release:403755498",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-05T13:43:45Z",
+      "title": "Recheck 0.1.0-alpha.6 — Evidence entry & source navigation",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0-alpha.6"
+    },
+    {
+      "id": "push:23064931272",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-05T13:41:11Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/dfcb852f6652dd16262af0949ce02953f3c48e5f...51dcff2314e5319f35aa8fdc4bc6d8d784fc0925"
+    },
+    {
+      "id": "commit:1403013902:51dcff2314e5319f35aa8fdc4bc6d8d784fc0925",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-05T13:41:09Z",
+      "title": "feat: improve evidence entry and source navigation for alpha.6 (#3)",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/51dcff2314e5319f35aa8fdc4bc6d8d784fc0925"
+    },
+    {
+      "id": "release:403096019",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-04T16:05:12Z",
+      "title": "Recheck 0.1.0-alpha.5 — Diagnostics & compatibility",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0-alpha.5"
+    },
+    {
+      "id": "push:23110379674",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-04T16:03:12Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/ff7ff2a219bf5941afb8d8d4260b5e8423e5b8a9...dfcb852f6652dd16262af0949ce02953f3c48e5f"
+    },
+    {
+      "id": "commit:1403013902:dfcb852f6652dd16262af0949ce02953f3c48e5f",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-04T16:03:10Z",
+      "title": "feat: add diagnostics and compatibility validation for alpha.5 (#2)",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/dfcb852f6652dd16262af0949ce02953f3c48e5f"
+    },
+    {
+      "id": "release:402614350",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-03T17:22:16Z",
+      "title": "v0.2.0 — 资源管理与文章分类",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.2.0"
+    },
+    {
+      "id": "release:402612577",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T17:19:32Z",
+      "title": "Recheck 0.1.0-alpha.4 — UI refresh",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0-alpha.4"
+    },
+    {
+      "id": "push:23043697508",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-03T17:18:33Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/42507888023029f7873dd11cf2fc5c7bb18c0db9...6f41220af0cb95631088e60da10e0307a4c3e767"
+    },
+    {
+      "id": "commit:1394822311:6f41220af0cb95631088e60da10e0307a4c3e767",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-03T17:18:16Z",
+      "title": "feat: 新增文章分类管理与组合筛选并补充回归测试",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/6f41220af0cb95631088e60da10e0307a4c3e767"
+    },
+    {
+      "id": "push:22898722071",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T17:11:36Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/4a5d0421fc724930636eaf3bc0aad82ebf307861...ff7ff2a219bf5941afb8d8d4260b5e8423e5b8a9"
+    },
+    {
+      "id": "commit:1403013902:ff7ff2a219bf5941afb8d8d4260b5e8423e5b8a9",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T17:11:35Z",
+      "title": "feat: refresh Recheck sidebar UI for alpha.4 (#1)",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/ff7ff2a219bf5941afb8d8d4260b5e8423e5b8a9"
+    },
+    {
+      "id": "release:402523459",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T13:22:47Z",
+      "title": "Recheck 0.1.0-alpha.3 — npm alpha",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0-alpha.3"
+    },
+    {
+      "id": "push:22883707957",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T13:14:44Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/b6d9bf9d1a9de27218ca7dc541174b14afcd6ea7...4a5d0421fc724930636eaf3bc0aad82ebf307861"
+    },
+    {
+      "id": "commit:1403013902:4a5d0421fc724930636eaf3bc0aad82ebf307861",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T13:14:35Z",
+      "title": "chore: prepare alpha.3 for npm publication",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/4a5d0421fc724930636eaf3bc0aad82ebf307861"
+    },
+    {
+      "id": "release:402478965",
+      "kind": "RELEASE",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T11:22:55Z",
+      "title": "Recheck 0.1.0-alpha.2",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/dsh-recheck/releases/tag/v0.1.0-alpha.2"
+    },
+    {
+      "id": "push:22919370251",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T11:18:40Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/2371fdd59c6e5ceb02754d336f15da6af1546676...b6d9bf9d1a9de27218ca7dc541174b14afcd6ea7"
+    },
+    {
+      "id": "commit:1403013902:b6d9bf9d1a9de27218ca7dc541174b14afcd6ea7",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T11:18:34Z",
+      "title": "docs: record verified alpha.2 release scope",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/b6d9bf9d1a9de27218ca7dc541174b14afcd6ea7"
+    },
+    {
+      "id": "push:22876377829",
+      "kind": "PUSH",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T11:13:06Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/dsh-recheck/compare/a47864401dbab00b00f3f323696d056134304d7c...2371fdd59c6e5ceb02754d336f15da6af1546676"
+    },
+    {
+      "id": "commit:1403013902:2371fdd59c6e5ceb02754d336f15da6af1546676",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T11:13:02Z",
+      "title": "chore: prepare public alpha.2 release and cross-platform CI",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/2371fdd59c6e5ceb02754d336f15da6af1546676"
+    },
+    {
+      "id": "commit:1403013902:a47864401dbab00b00f3f323696d056134304d7c",
+      "kind": "COMMIT",
+      "repo": "InInNHD/dsh-recheck",
+      "date": "2026-10-03T10:45:47Z",
+      "title": "chore: import Recheck 0.1.0-alpha.1",
+      "url": "https://github.com/InInNHD/dsh-recheck/commit/a47864401dbab00b00f3f323696d056134304d7c"
+    },
+    {
+      "id": "push:22860260033",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-02T17:19:21Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/77af09a121ec02c75f84351cf34b4af060572484...42507888023029f7873dd11cf2fc5c7bb18c0db9"
+    },
+    {
+      "id": "commit:1394822311:42507888023029f7873dd11cf2fc5c7bb18c0db9",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-02T17:19:05Z",
+      "title": "feat: 新增资源展示和后台资源管理",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/42507888023029f7873dd11cf2fc5c7bb18c0db9"
+    },
+    {
+      "id": "release:400746722",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-01T07:47:48Z",
+      "title": "v0.1.0 — 文章管理与请求稳定性改进",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.1.0"
+    },
+    {
+      "id": "push:22803626118",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-01T07:41:08Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/d370cddb24a1aa4a7625f9c593dc015ea25c4fe4...77af09a121ec02c75f84351cf34b4af060572484"
+    },
+    {
+      "id": "commit:1394822311:77af09a121ec02c75f84351cf34b4af060572484",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-01T07:30:57Z",
+      "title": "fix: 修复文章请求竞态并补充管理员启动配置",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/77af09a121ec02c75f84351cf34b4af060572484"
+    },
+    {
+      "id": "push:22605373597",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-09-30T16:29:28Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/07dbf82f6349187f88736e147633ba1a8f832cb1...d370cddb24a1aa4a7625f9c593dc015ea25c4fe4"
+    },
+    {
+      "id": "commit:1394822311:d370cddb24a1aa4a7625f9c593dc015ea25c4fe4",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-09-30T16:24:24Z",
+      "title": "feat: add admin article management",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/d370cddb24a1aa4a7625f9c593dc015ea25c4fe4"
+    },
+    {
+      "id": "commit:1394822311:07dbf82f6349187f88736e147633ba1a8f832cb1",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-09-29T09:34:58Z",
+      "title": "Initial commit: prepare personal website",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/07dbf82f6349187f88736e147633ba1a8f832cb1"
+    },
+    {
+      "id": "commit:1351323838:f07e2a5f86ead064f4c3d9af09d8587a3e9cf1b5",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-19T01:33:50Z",
+      "title": "build(deps): bump nodemailer from 9.0.6 to 10.0.10",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/f07e2a5f86ead064f4c3d9af09d8587a3e9cf1b5"
+    },
+    {
+      "id": "commit:1351323838:f822a72251be4b54bd5492d26e18f83401de1137",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-19T01:33:20Z",
+      "title": "build(deps-dev): bump @types/node from 22.20.1 to 26.6.1",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/f822a72251be4b54bd5492d26e18f83401de1137"
+    },
+    {
+      "id": "commit:1351323838:3db8e9e5ca5b2b8982af7a5d9f8400371867d6fd",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-19T01:33:13Z",
+      "title": "build(deps): bump react and @types/react",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/3db8e9e5ca5b2b8982af7a5d9f8400371867d6fd"
+    },
+    {
+      "id": "commit:1351323838:817ec27c775a61c8f4df1ba9278d641296b42bf0",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-19T01:33:01Z",
+      "title": "build(deps): bump react-dom and @types/react-dom",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/817ec27c775a61c8f4df1ba9278d641296b42bf0"
+    },
+    {
+      "id": "commit:1351323838:792584e367156c7a490de7b7cb88d6e8afe3f766",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-05T12:08:59Z",
+      "title": "feat: Artalk Turnstile+邮件通知+懒加载 / vault ADMIN_TOKEN / fail2ban recidive / Lighthouse CI / SW与检查清单增强",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/792584e367156c7a490de7b7cb88d6e8afe3f766"
+    },
+    {
+      "id": "commit:1351323838:2db475a0e1d2e45b58be632309a32ccd921c8028",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-05T11:50:35Z",
+      "title": "ops: mail.py SMTP 主机/账号默认值（deploy/.env 仅存密码）",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/2db475a0e1d2e45b58be632309a32ccd921c8028"
+    },
+    {
+      "id": "commit:1351323838:f91eeb9f37479ba32c08737d8a53390470a69647",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-05T11:46:45Z",
+      "title": "build(deps-dev): bump typescript from 5.9.3 to 7.0.2",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/f91eeb9f37479ba32c08737d8a53390470a69647"
+    },
+    {
+      "id": "commit:1351323838:ae91be4bae24b9e81cc5ad3f53abc37ed171daf6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-05T11:46:23Z",
+      "title": "build(deps): bump actions/setup-node from 4 to 7",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/ae91be4bae24b9e81cc5ad3f53abc37ed171daf6"
+    },
+    {
+      "id": "commit:1351323838:bab2329e445a457d61bcd860bc9675dfea552bb9",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-05T11:46:17Z",
+      "title": "build(deps): bump actions/checkout from 4 to 7",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/bab2329e445a457d61bcd860bc9675dfea552bb9"
+    },
+    {
+      "id": "commit:1351323838:06e1f8c0429990c5c8c4331fa77b5b5dd5b4a5c0",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-05T11:45:38Z",
+      "title": "ops: 月度升级检查/备份演练自动化 + 通用邮件通知 + Dependabot + 文档去重",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/06e1f8c0429990c5c8c4331fa77b5b5dd5b4a5c0"
+    },
+    {
+      "id": "commit:1312649957:47f7de4bc8508de93c851a3c42cb99b138aecfd3",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-03T15:57:26Z",
+      "title": "docs: explain organization hierarchy database validation",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/47f7de4bc8508de93c851a3c42cb99b138aecfd3"
+    },
+    {
+      "id": "commit:1312649957:9e81873a10ffde62e70892d3948c126f54107443",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-03T15:53:41Z",
+      "title": "fix: make organization migration compatible with mysql 8",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/9e81873a10ffde62e70892d3948c126f54107443"
+    },
+    {
+      "id": "commit:1312649957:4ef3a467bc78eac7e7396d8bb80a98eeab942a4c",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-03T15:38:07Z",
+      "title": "test: align MySQL migration gate with current schema",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/4ef3a467bc78eac7e7396d8bb80a98eeab942a4c"
+    },
+    {
+      "id": "commit:1312649957:2fe62b528d9803492b11ac04924e4e23e54d3f01",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-03T15:33:21Z",
+      "title": "test: make identifier fixtures deterministic in CI",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/2fe62b528d9803492b11ac04924e4e23e54d3f01"
+    },
+    {
+      "id": "commit:1349550250:d69de0e6be199cbdd0e49b34d91f0a8aeec64d4e",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T10:08:38Z",
+      "title": "docs: refresh public demo screenshots",
+      "url": "https://github.com/InInNHD/starticket/commit/d69de0e6be199cbdd0e49b34d91f0a8aeec64d4e"
+    },
+    {
+      "id": "commit:1312649957:24f8edf4ac15f34304db9b591d043cd0904518f6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-03T10:06:06Z",
+      "title": "feat: complete staff demo roles and delivery resilience",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/24f8edf4ac15f34304db9b591d043cd0904518f6"
+    },
+    {
+      "id": "commit:1349550250:0a55d2f77ac55a7850ee7507af221886f4373590",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T10:04:46Z",
+      "title": "fix: improve light panel text contrast",
+      "url": "https://github.com/InInNHD/starticket/commit/0a55d2f77ac55a7850ee7507af221886f4373590"
+    },
+    {
+      "id": "release:381907524",
+      "kind": "RELEASE",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T09:52:56Z",
+      "title": "StarTicket v1.1.0",
+      "prerelease": false,
+      "url": "https://github.com/InInNHD/starticket/releases/tag/v1.1.0"
+    },
+    {
+      "id": "commit:1312649957:3fd5718b050c41ccbaa7363f4739e48f9bb5e5fe",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-03T09:43:23Z",
+      "title": "feat: unify care workflows and harden operations",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/3fd5718b050c41ccbaa7363f4739e48f9bb5e5fe"
+    },
+    {
+      "id": "commit:1349550250:0dd35300a03be280d9a9101d10214f3258390961",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T09:40:12Z",
+      "title": "fix: align browser smoke test with allowed origin",
+      "url": "https://github.com/InInNHD/starticket/commit/0dd35300a03be280d9a9101d10214f3258390961"
+    },
+    {
+      "id": "commit:1349550250:af5e7431c81227fb1f5e77f12ce0105880417078",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T09:35:08Z",
+      "title": "fix: wait for demo seed before browser tests",
+      "url": "https://github.com/InInNHD/starticket/commit/af5e7431c81227fb1f5e77f12ce0105880417078"
+    },
+    {
+      "id": "commit:1349550250:cc0f3e6b50c15269b8dc49388a60bea54d0c4662",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T04:32:58Z",
+      "title": "fix: stabilize browser purchase smoke test",
+      "url": "https://github.com/InInNHD/starticket/commit/cc0f3e6b50c15269b8dc49388a60bea54d0c4662"
+    },
+    {
+      "id": "commit:1349550250:de3bf9d99f2086a1066fe39c99005779a75f1cf6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T04:28:28Z",
+      "title": "fix: keep production deploy scoped to app services",
+      "url": "https://github.com/InInNHD/starticket/commit/de3bf9d99f2086a1066fe39c99005779a75f1cf6"
+    },
+    {
+      "id": "commit:1349550250:e7a9732013fd9630a6fc5b4fc3a3601fcd4c2d87",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-03T04:25:47Z",
+      "title": "feat: harden demo and delivery workflow",
+      "url": "https://github.com/InInNHD/starticket/commit/e7a9732013fd9630a6fc5b4fc3a3601fcd4c2d87"
+    },
+    {
+      "id": "commit:1351323838:dea87ba92c8a1ddd80cebc368e361a7d1bb77b01",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-02T17:27:17Z",
+      "title": "feat: secure chatter and improve reading experience",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/dea87ba92c8a1ddd80cebc368e361a7d1bb77b01"
+    },
+    {
+      "id": "commit:1351323838:ac9248761ae1f6f7992eeb5eaf321fb6447f2095",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-02T15:24:34Z",
+      "title": "feat: refine performance content navigation and projects",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/ac9248761ae1f6f7992eeb5eaf321fb6447f2095"
+    },
+    {
+      "id": "commit:1351323838:1af70a7d9570ca03e6acda9a3f5bb21395aaf9d6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-02T13:08:14Z",
+      "title": "feat: complete content quality and site polish",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/1af70a7d9570ca03e6acda9a3f5bb21395aaf9d6"
+    },
+    {
+      "id": "commit:1351323838:333284c02046febcffcc48f6e22ea1bc8eb49a27",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-02T07:33:30Z",
+      "title": "ops: keep Umami monitor internal behind Access",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/333284c02046febcffcc48f6e22ea1bc8eb49a27"
+    },
+    {
+      "id": "commit:1312649957:ff316d84798fa68c8578d37119b2b835666fa628",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-02T06:07:29Z",
+      "title": "fix: stabilize authenticated portal sessions",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/ff316d84798fa68c8578d37119b2b835666fa628"
+    },
+    {
+      "id": "commit:1351323838:c0fb400de112ea3e56bc7bffb3fec0a5567222b8",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-02T06:04:34Z",
+      "title": "ops: harden alerts backups and disk maintenance",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/c0fb400de112ea3e56bc7bffb3fec0a5567222b8"
+    },
+    {
+      "id": "commit:1312649957:d2bf81b87ddd2b16edcacd60222bdfc5f42fca31",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-02T05:29:03Z",
+      "title": "fix: restore frontend bundle startup",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/d2bf81b87ddd2b16edcacd60222bdfc5f42fca31"
+    },
+    {
+      "id": "commit:1312649957:b8c1413030f2492e39ba6ba08f0be2d0babbfe02",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-09-02T05:17:06Z",
+      "title": "fix: prevent inventory status label overflow",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/b8c1413030f2492e39ba6ba08f0be2d0babbfe02"
+    },
+    {
+      "id": "commit:1349550250:d1cc022eec16acb319e65e81b265c18c686fbb82",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-02T05:09:33Z",
+      "title": "feat: prefill demo admin login",
+      "url": "https://github.com/InInNHD/starticket/commit/d1cc022eec16acb319e65e81b265c18c686fbb82"
+    },
+    {
+      "id": "commit:1349550250:08da83d1d1c6e6fd066d898743d78abd7dbc8e96",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-09-01T19:16:53Z",
+      "title": "Remove project description from README",
+      "url": "https://github.com/InInNHD/starticket/commit/08da83d1d1c6e6fd066d898743d78abd7dbc8e96"
+    },
+    {
+      "id": "commit:1351323838:e5d9223580cd4605e450765bf6477f72be2bf660",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T18:53:32Z",
+      "title": "fix: keep protected services observable behind Access",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/e5d9223580cd4605e450765bf6477f72be2bf660"
+    },
+    {
+      "id": "commit:1351323838:acd3142279e17f667fa5d470ce63cd8db2a9200b",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T12:03:18Z",
+      "title": "feat: 完成 P0 监控与 P1 主站改造",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/acd3142279e17f667fa5d470ce63cd8db2a9200b"
+    },
+    {
+      "id": "commit:1351323838:a39b91327e8c9c4e237c1114401d136f26b616cc",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T11:34:15Z",
+      "title": "fix: 使用相对地址跳转状态页",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/a39b91327e8c9c4e237c1114401d136f26b616cc"
+    },
+    {
+      "id": "commit:1351323838:6a42f5efac55ab32f19f2960f0fc6d2ef7d1ea81",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T11:33:01Z",
+      "title": "fix: 恢复状态页与导航站配置",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/6a42f5efac55ab32f19f2960f0fc6d2ef7d1ea81"
+    },
+    {
+      "id": "commit:1351323838:1cce8ca92f3e6b59e1df9f8d7d1b09ecd88c2033",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T06:32:43Z",
+      "title": "feat: 完成内容体验升级与音乐玻璃模块",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/1cce8ca92f3e6b59e1df9f8d7d1b09ecd88c2033"
+    },
+    {
+      "id": "commit:1351323838:1ba35c427553da4ae67e6d380db5dad5dd1a95cf",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T05:07:14Z",
+      "title": "ops: kuma 镜像固定摘要 + 资源限制（external 卷，服务器重建容器用）",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/1ba35c427553da4ae67e6d380db5dad5dd1a95cf"
+    },
+    {
+      "id": "commit:1351323838:4b929186f6d5e98583023d63ca9877a106f0ee9b",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-09-01T04:49:20Z",
+      "title": "ops/security: 自动发布流水线(重建web+健康检查+回滚) + CI + Next16升级 + 安全响应头 + 镜像摘要固定 + 容器资源限制 + 端口文档对齐",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/4b929186f6d5e98583023d63ca9877a106f0ee9b"
+    },
+    {
+      "id": "commit:1351323838:8a03eb7e74763c85a02e9bd004a9e9897c2c1148",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-08-31T17:32:16Z",
+      "title": "security: SSH 加固配置（禁密码登录/禁root/X11关闭/MaxAuthTries3/AllowUsers）+ UFW + Fail2ban",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/8a03eb7e74763c85a02e9bd004a9e9897c2c1148"
+    },
+    {
+      "id": "commit:1351323838:8c3bb99149d0c1687a4ef0d98ff67f1993e9f61f",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-08-31T17:02:04Z",
+      "title": "security: 备份v3(一致性导出+crypt加密+find修复+vaultwarden补齐) / umami APP_SECRET轮换入env / shlink密钥轮换+servers.json屏蔽",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/8c3bb99149d0c1687a4ef0d98ff67f1993e9f61f"
+    },
+    {
+      "id": "commit:1349550250:08e5ac3528022bd8015cde457e5e052264169cc3",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T16:02:36Z",
+      "title": "chore: expose app through cloudflare tunnel",
+      "url": "https://github.com/InInNHD/starticket/commit/08e5ac3528022bd8015cde457e5e052264169cc3"
+    },
+    {
+      "id": "commit:1349550250:c35e4121e3517dafcc504294dc323af396dc5196",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T15:42:55Z",
+      "title": "chore: add server reverse proxy",
+      "url": "https://github.com/InInNHD/starticket/commit/c35e4121e3517dafcc504294dc323af396dc5196"
+    },
+    {
+      "id": "commit:1349550250:d21c433c3343a1dd16240874004a21b14d47d4aa",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T15:41:43Z",
+      "title": "feat: harden shared demo deployment",
+      "url": "https://github.com/InInNHD/starticket/commit/d21c433c3343a1dd16240874004a21b14d47d4aa"
+    },
+    {
+      "id": "commit:1349550250:4688099dae276a5d826430a44d705fdf4827ae2b",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T14:40:23Z",
+      "title": "feat: enrich demo event catalog",
+      "url": "https://github.com/InInNHD/starticket/commit/4688099dae276a5d826430a44d705fdf4827ae2b"
+    },
+    {
+      "id": "commit:1351323838:7ab33329f9b36cb28d4132570c99a28fca164f03",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-08-30T11:19:58Z",
+      "title": "docs: Git 工作流说明",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/7ab33329f9b36cb28d4132570c99a28fca164f03"
+    },
+    {
+      "id": "commit:1351323838:dd79a4a62e3cef5cb1e49e054acc6167777e9258",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-08-30T11:19:31Z",
+      "title": "ops: 每小时自动 git pull 一致性脚本",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/dd79a4a62e3cef5cb1e49e054acc6167777e9258"
+    },
+    {
+      "id": "commit:1351323838:f6bf65c73a02f95e83de4f3bdc8483fa11c19e38",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-08-30T11:18:12Z",
+      "title": "feat: 13 个子站配置 + 站点清单 + env 示例",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/f6bf65c73a02f95e83de4f3bdc8483fa11c19e38"
+    },
+    {
+      "id": "commit:1351323838:edc5c134bd572d8238775fa5e5abf666a0331c9d",
+      "kind": "COMMIT",
+      "repo": "InInNHD/fireflyiv-blog",
+      "date": "2026-08-30T11:16:33Z",
+      "title": "init: FireflyIv 博客主站 + 子站配置 + 部署编排（服务器为源首次推送）",
+      "url": "https://github.com/InInNHD/fireflyiv-blog/commit/edc5c134bd572d8238775fa5e5abf666a0331c9d"
+    },
+    {
+      "id": "commit:1350501258:de833df04b4f24b72440fe179f730e80ec367352",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-30T06:15:41Z",
+      "title": "feat: complete Xinjiang carrier operations phase three",
+      "url": "https://github.com/InInNHD/Logistics/commit/de833df04b4f24b72440fe179f730e80ec367352"
+    },
+    {
+      "id": "commit:1312649957:5d2854c0d673d5c91b39a23fc0115f78ddfd5f86",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-08-30T06:01:33Z",
+      "title": "feat: rebuild community healthcare platform",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/5d2854c0d673d5c91b39a23fc0115f78ddfd5f86"
+    },
+    {
+      "id": "commit:1350501258:0eb7dc9dd223aa54d218e13e7b658dec2226adbc",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-30T06:00:43Z",
+      "title": "feat: add resilient carrier sync scheduling",
+      "url": "https://github.com/InInNHD/Logistics/commit/0eb7dc9dd223aa54d218e13e7b658dec2226adbc"
+    },
+    {
+      "id": "release:379190779",
+      "kind": "RELEASE",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T05:33:19Z",
+      "title": "StarTicket v1.0.0",
+      "prerelease": false,
+      "url": "https://github.com/InInNHD/starticket/releases/tag/v1.0.0"
+    },
+    {
+      "id": "commit:1349550250:11b7ab06aef769ee94cd6d751df8182821aa357d",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T05:26:37Z",
+      "title": "fix: bound Redis degradation latency",
+      "url": "https://github.com/InInNHD/starticket/commit/11b7ab06aef769ee94cd6d751df8182821aa357d"
+    },
+    {
+      "id": "commit:1349550250:3bd1deb46bbf161bf0c9ad9f968980b6231cf3f5",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T05:22:42Z",
+      "title": "ci: publish v1 images and GitHub release",
+      "url": "https://github.com/InInNHD/starticket/commit/3bd1deb46bbf161bf0c9ad9f968980b6231cf3f5"
+    },
+    {
+      "id": "commit:1349550250:0554ba73319886bdba98511719f07364b7032976",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T05:17:14Z",
+      "title": "test: verify Redis cache and outage fallback",
+      "url": "https://github.com/InInNHD/starticket/commit/0554ba73319886bdba98511719f07364b7032976"
+    },
+    {
+      "id": "commit:1349550250:aa45ac196c43055c96755efb807c7686dddcd52f",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-30T05:06:08Z",
+      "title": "docs: sharpen README project overview",
+      "url": "https://github.com/InInNHD/starticket/commit/aa45ac196c43055c96755efb807c7686dddcd52f"
+    },
+    {
+      "id": "commit:1349550250:9442d559a2f9c420f544faec29de5e1313317a5d",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T17:21:15Z",
+      "title": "docs: publish corrected performance benchmark",
+      "url": "https://github.com/InInNHD/starticket/commit/9442d559a2f9c420f544faec29de5e1313317a5d"
+    },
+    {
+      "id": "commit:1349550250:a7bc931cef4db1aa9fb081422008424785036dd9",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T17:12:34Z",
+      "title": "test: isolate warmup and formal users",
+      "url": "https://github.com/InInNHD/starticket/commit/a7bc931cef4db1aa9fb081422008424785036dd9"
+    },
+    {
+      "id": "commit:1349550250:2797ed8f6e89505e31b1b456dc4af2e5650e87e6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T16:52:45Z",
+      "title": "fix: reset isolated benchmark volumes",
+      "url": "https://github.com/InInNHD/starticket/commit/2797ed8f6e89505e31b1b456dc4af2e5650e87e6"
+    },
+    {
+      "id": "commit:1349550250:16b4a094a23fe714a5570c3521ddfd8c5d068502",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T16:51:24Z",
+      "title": "test: rebuild inventory benchmark harness",
+      "url": "https://github.com/InInNHD/starticket/commit/16b4a094a23fe714a5570c3521ddfd8c5d068502"
+    },
+    {
+      "id": "commit:1349550250:cd8eb25f143612a03e1bc7c2d48fa9a74bb920aa",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T16:13:02Z",
+      "title": "ci: update GitHub Actions runtimes",
+      "url": "https://github.com/InInNHD/starticket/commit/cd8eb25f143612a03e1bc7c2d48fa9a74bb920aa"
+    },
+    {
+      "id": "commit:1349550250:e5b15ea3e13cd4ac1896269ea3c4d73ca004af30",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T16:09:10Z",
+      "title": "test: complete event detail load acceptance",
+      "url": "https://github.com/InInNHD/starticket/commit/e5b15ea3e13cd4ac1896269ea3c4d73ca004af30"
+    },
+    {
+      "id": "commit:1350501258:eae33ca146e7a9178deb7ccc555064977ca1437d",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T11:35:34Z",
+      "title": "feat: complete carrier integration phase one",
+      "url": "https://github.com/InInNHD/Logistics/commit/eae33ca146e7a9178deb7ccc555064977ca1437d"
+    },
+    {
+      "id": "commit:1350501258:f09464c3e0824bfd979e6113f3fa308ccd93e3cc",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:49:21Z",
+      "title": "chore(deps-dev): bump @tsconfig/node22 in /frontend",
+      "url": "https://github.com/InInNHD/Logistics/commit/f09464c3e0824bfd979e6113f3fa308ccd93e3cc"
+    },
+    {
+      "id": "commit:1350501258:e2a697c374b7402428a027fcc92f18f10a4851c2",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:49:18Z",
+      "title": "chore(deps-dev): bump vite from 7.3.6 to 8.2.2 in /frontend",
+      "url": "https://github.com/InInNHD/Logistics/commit/e2a697c374b7402428a027fcc92f18f10a4851c2"
+    },
+    {
+      "id": "commit:1350501258:db486af8cf8e4c3e556b43e51e5ae1f95f2cf410",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:49:03Z",
+      "title": "chore(deps-dev): bump vue-tsc from 3.3.9 to 3.3.11 in /frontend",
+      "url": "https://github.com/InInNHD/Logistics/commit/db486af8cf8e4c3e556b43e51e5ae1f95f2cf410"
+    },
+    {
+      "id": "commit:1350501258:85a9d8d6d914e5e6d45952094906e91ac72f88ef",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:56Z",
+      "title": "chore(deps-dev): bump @eslint/js from 9.39.5 to 10.0.1 in /frontend",
+      "url": "https://github.com/InInNHD/Logistics/commit/85a9d8d6d914e5e6d45952094906e91ac72f88ef"
+    },
+    {
+      "id": "commit:1350501258:19c0e1b77fda6a4c84ebda5a1ce29c84922ea1bb",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:49Z",
+      "title": "chore(deps): bump spring-boot.version from 3.5.6 to 4.1.1 in /backend",
+      "url": "https://github.com/InInNHD/Logistics/commit/19c0e1b77fda6a4c84ebda5a1ce29c84922ea1bb"
+    },
+    {
+      "id": "commit:1350501258:43f2dc01b97dd21768a1fb9a8f270a055ab03843",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:48Z",
+      "title": "chore(deps-dev): bump typescript-eslint in /frontend",
+      "url": "https://github.com/InInNHD/Logistics/commit/43f2dc01b97dd21768a1fb9a8f270a055ab03843"
+    },
+    {
+      "id": "commit:1350501258:f2889646f74370885033f3f2dfb0457dd3b0edf9",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:40Z",
+      "title": "chore(deps): bump org.springdoc:springdoc-openapi-starter-webmvc-ui",
+      "url": "https://github.com/InInNHD/Logistics/commit/f2889646f74370885033f3f2dfb0457dd3b0edf9"
+    },
+    {
+      "id": "commit:1350501258:45112e6c89e1721351cf244b365cef5b05f1abbc",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:34Z",
+      "title": "chore(deps-dev): bump org.apache.maven.plugins:maven-compiler-plugin",
+      "url": "https://github.com/InInNHD/Logistics/commit/45112e6c89e1721351cf244b365cef5b05f1abbc"
+    },
+    {
+      "id": "commit:1350501258:6a548eefef0d06bbc4472e454a2385431c72eeaa",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:31Z",
+      "title": "chore(deps): bump actions/setup-java from 4 to 6",
+      "url": "https://github.com/InInNHD/Logistics/commit/6a548eefef0d06bbc4472e454a2385431c72eeaa"
+    },
+    {
+      "id": "commit:1350501258:3caa4ea0d4a45ff684da85b85041a5fdd61d6e64",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:30Z",
+      "title": "chore(deps-dev): bump org.apache.maven.plugins:maven-surefire-plugin",
+      "url": "https://github.com/InInNHD/Logistics/commit/3caa4ea0d4a45ff684da85b85041a5fdd61d6e64"
+    },
+    {
+      "id": "commit:1350501258:51d5c642b0fd0c8a91da4e0864dbe78e0a3ee234",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:27Z",
+      "title": "chore(deps): bump jjwt.version from 0.12.6 to 0.13.0 in /backend",
+      "url": "https://github.com/InInNHD/Logistics/commit/51d5c642b0fd0c8a91da4e0864dbe78e0a3ee234"
+    },
+    {
+      "id": "commit:1350501258:d934102f7df458f58ed39820e2433a6f58573313",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:22Z",
+      "title": "chore(deps): bump actions/setup-node from 4 to 7",
+      "url": "https://github.com/InInNHD/Logistics/commit/d934102f7df458f58ed39820e2433a6f58573313"
+    },
+    {
+      "id": "commit:1350501258:5105c127b360d07d146263879944654231bdf7e6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-29T10:48:17Z",
+      "title": "chore(deps): bump actions/checkout from 4 to 7",
+      "url": "https://github.com/InInNHD/Logistics/commit/5105c127b360d07d146263879944654231bdf7e6"
+    },
+    {
+      "id": "commit:1349550250:791e4ae95cca70ee3fe575c76037798ecc1bc779",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-29T04:00:04Z",
+      "title": "docs: publish sustained performance portfolio",
+      "url": "https://github.com/InInNHD/starticket/commit/791e4ae95cca70ee3fe575c76037798ecc1bc779"
+    },
+    {
+      "id": "commit:1349550250:5bb9064ddb718833607dae4319b142b1c81d06dc",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-28T15:40:40Z",
+      "title": "test: add request tracing and concurrency coverage",
+      "url": "https://github.com/InInNHD/starticket/commit/5bb9064ddb718833607dae4319b142b1c81d06dc"
+    },
+    {
+      "id": "commit:1349550250:51b1e80ef1ca18b02e2cc87aa814ea6f976b1510",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-28T15:02:47Z",
+      "title": "feat: harden event lifecycle and message recovery",
+      "url": "https://github.com/InInNHD/starticket/commit/51b1e80ef1ca18b02e2cc87aa814ea6f976b1510"
+    },
+    {
+      "id": "commit:1349550250:9289340cc1db26d44a0ece556bd4a1b3133bccc2",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-28T12:20:57Z",
+      "title": "feat: add event operations and sales dashboard",
+      "url": "https://github.com/InInNHD/starticket/commit/9289340cc1db26d44a0ece556bd4a1b3133bccc2"
+    },
+    {
+      "id": "commit:1349550250:b525f052ddaffcd149998a5f4c1f6167c213b203",
+      "kind": "COMMIT",
+      "repo": "InInNHD/starticket",
+      "date": "2026-08-28T11:43:45Z",
+      "title": "feat: complete StarTicket v1 baseline",
+      "url": "https://github.com/InInNHD/starticket/commit/b525f052ddaffcd149998a5f4c1f6167c213b203"
+    },
+    {
+      "id": "commit:1350501258:5196171e6910ef6c3ca0dba483d71bbf69f4fedf",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-27T17:05:33Z",
+      "title": "feat: seed public orders and courier partners",
+      "url": "https://github.com/InInNHD/Logistics/commit/5196171e6910ef6c3ca0dba483d71bbf69f4fedf"
+    },
+    {
+      "id": "commit:1350501258:2f0c50bed3dfe2c005860c43c0eab2b788eeda2b",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-27T13:24:25Z",
+      "title": "fix: restore sidebar navigation for session logins",
+      "url": "https://github.com/InInNHD/Logistics/commit/2f0c50bed3dfe2c005860c43c0eab2b788eeda2b"
+    },
+    {
+      "id": "commit:1350501258:6312464a39bb1a48bb223e180495410340cb8e5a",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-27T13:06:56Z",
+      "title": "feat: complete warehouse workflows and security hardening",
+      "url": "https://github.com/InInNHD/Logistics/commit/6312464a39bb1a48bb223e180495410340cb8e5a"
+    },
+    {
+      "id": "commit:1350501258:165917b7fe9f6beb41bc5e1b48a4dbae4faf96ca",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Logistics",
+      "date": "2026-08-27T12:17:27Z",
+      "title": "chore: establish firefly logistics baseline",
+      "url": "https://github.com/InInNHD/Logistics/commit/165917b7fe9f6beb41bc5e1b48a4dbae4faf96ca"
+    },
+    {
+      "id": "commit:1312649957:2889148e58993f654d59cbaf862612059e8200d2",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-08-22T17:23:14Z",
+      "title": "docs: plan backend source commenting",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/2889148e58993f654d59cbaf862612059e8200d2"
+    },
+    {
+      "id": "commit:1312649957:941a6a04e75f0b87e10a6c3407aaebaf25897b1b",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-08-22T17:18:57Z",
+      "title": "docs: define backend source commenting strategy",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/941a6a04e75f0b87e10a6c3407aaebaf25897b1b"
+    },
+    {
+      "id": "commit:1312649957:e2d3fab6e8907f133939c80d0a137a224308dcd8",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-08-22T09:26:50Z",
+      "title": "docs: define community healthcare platform architecture",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/e2d3fab6e8907f133939c80d0a137a224308dcd8"
+    },
+    {
+      "id": "commit:1312649957:ca44a8424b07eaffa0c22107102021ac00792c83",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T09:40:13Z",
+      "title": "Merge branch 'main' of https://github.com/InInNHD/Community-healthcare-system",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/ca44a8424b07eaffa0c22107102021ac00792c83"
+    },
+    {
+      "id": "commit:1312649957:1fe1d41a6a16409d90eb54b31450f1942ce0ca71",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T09:32:32Z",
+      "title": "更新用户模型与 JWT 常量，清理旧 SQL 文件",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/1fe1d41a6a16409d90eb54b31450f1942ce0ca71"
+    },
+    {
+      "id": "commit:1312649957:6bff552110da63fe6962adee990b508fa76cf2e4",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T09:21:09Z",
+      "title": "pre”",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/6bff552110da63fe6962adee990b508fa76cf2e4"
+    },
+    {
+      "id": "commit:1312649957:88473d48896549941494b75592e9fbbf06615bad",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T09:07:11Z",
+      "title": "Update README with community healthcare system details",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/88473d48896549941494b75592e9fbbf06615bad"
+    },
+    {
+      "id": "commit:1312649957:b106cb7f8779aa595f6d4b177ddb8c77bd1a4614",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T09:06:32Z",
+      "title": "Fix formatting in README for clarity",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/b106cb7f8779aa595f6d4b177ddb8c77bd1a4614"
+    },
+    {
+      "id": "commit:1312649957:84ea932501f10eab250e76061d113a523ffd111e",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T09:05:51Z",
+      "title": "Initial commit",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/84ea932501f10eab250e76061d113a523ffd111e"
+    },
+    {
+      "id": "commit:1312649957:933b5d9bfc5c7985ee6bd252a03c6a9bc9a064f0",
+      "kind": "COMMIT",
+      "repo": "InInNHD/Community-healthcare-system",
+      "date": "2026-07-26T08:39:04Z",
+      "title": "medicine system",
+      "url": "https://github.com/InInNHD/Community-healthcare-system/commit/933b5d9bfc5c7985ee6bd252a03c6a9bc9a064f0"
+    }
+  ]
+}

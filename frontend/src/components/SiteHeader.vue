@@ -22,9 +22,11 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <RouterLink to="/" exact-active-class="v2-exact" :class="{ 'is-active': route.path === '/' && route.hash !== '#entries' }"
                   :aria-current="route.path === '/' && route.hash !== '#entries' ? 'page' : null">首页</RouterLink>
       <RouterLink :to="{ path: '/', query: homeQuery, hash: '#entries' }" exact-active-class="v2-exact"
-                  :class="{ 'is-active': route.hash === '#entries' || route.path.startsWith('/articles/') }"
-                  :aria-current="route.hash === '#entries' ? 'location' : null">文章</RouterLink>
+                  :class="{ 'is-active': (route.path === '/' && route.hash === '#entries') || route.path.startsWith('/articles/') }"
+                  :aria-current="route.path === '/' && route.hash === '#entries' ? 'location' : null">文章</RouterLink>
+      <RouterLink to="/topics">主题</RouterLink>
       <RouterLink to="/archive">归档</RouterLink>
+      <RouterLink to="/diary">日记</RouterLink>
       <RouterLink to="/resources">资源</RouterLink>
       <RouterLink to="/about">关于</RouterLink>
     </nav>

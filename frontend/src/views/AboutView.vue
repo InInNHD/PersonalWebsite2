@@ -1,85 +1,156 @@
 <script setup>
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { siteProfile } from '../siteProfile.js'
+import ProfileAvatar from '../components/ProfileAvatar.vue'
+import ArticlePagination from '../components/ArticlePagination.vue'
+
+const snapshot = ref(null)
+const loading = ref(false)
+const error = ref('')
+const repository = ref('')
+const kind = ref('')
+const page = ref(1)
+const updatesTitle = ref(null)
+let latestRequestId = 0
+onBeforeUnmount(() => { latestRequestId += 1 })
+
+// 文案作为普通文本显示；外链只允许http/https，不使用v-html。
+function externalLink(value) {
+  try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.href : '' }
+  catch { return '' }
+}
+const githubLink = computed(() => externalLink(siteProfile.githubUrl))
+const directions = computed(() => siteProfile.learningDirections.filter(item => item.title.trim()))
+const experiences = computed(() => siteProfile.experiences.filter(item => item.title.trim()))
+const contacts = computed(() => siteProfile.contactLinks.filter(item => item.label.trim() && externalLink(item.url)))
+const projects = computed(() => snapshot.value?.projects ?? [])
+const languages = computed(() => [...new Set(projects.value.map(item => item.language).filter(Boolean))])
+const eventNames = { PUSH: '推送', RELEASE: 'Release', COMMIT: '历史提交' }
+const filteredEvents = computed(() => (snapshot.value?.events ?? []).filter(item =>
+    (!repository.value || item.repo === repository.value) && (!kind.value || item.kind === kind.value)))
+const totalPages = computed(() => Math.ceil(filteredEvents.value.length / 10))
+const visibleEvents = computed(() => filteredEvents.value.slice((page.value - 1) * 10, page.value * 10))
+// 日期统一按北京时间显示，不受读者电脑的时区影响。
+const dateFormat = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' })
+const timeFormat = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false })
+const dateText = value => dateFormat.format(new Date(value))
+const timeText = value => timeFormat.format(new Date(value))
+const validDate = value => typeof value === 'string' && Number.isFinite(Date.parse(value))
+const strings = (item, keys) => item && keys.every(key => typeof item[key] === 'string')
+
+async function loadProjects() {
+  const requestId = ++latestRequestId
+  loading.value = true
+  error.value = ''
+  snapshot.value = null
+  try {
+    // 读取本站同步快照，浏览页面时不向GitHub发请求，也不依赖Java服务。
+    const response = await fetch('/github-profile.json', { cache: 'no-cache' })
+    if (!response.ok) throw new Error(`项目资料加载失败：HTTP ${response.status}`)
+    const data = await response.json()
+    if (data.schemaVersion !== 1 || data.owner !== siteProfile.githubName
+        || !Array.isArray(data.projects) || !Array.isArray(data.events)
+        || !validDate(data.syncedAt)) throw new Error('项目资料格式不正确')
+    const repoNames = new Set(data.projects.map(item => item?.fullName))
+    if (data.projects.some(item => !strings(item, ['id', 'name', 'fullName', 'description', 'language', 'url'])
+            || !item.name.trim() || !item.fullName.startsWith(`${data.owner}/`)
+            || (item.pushedAt != null && !validDate(item.pushedAt)))
+        || data.events.some(item => !strings(item, ['id', 'repo', 'title', 'url'])
+            || !repoNames.has(item.repo) || !Object.hasOwn(eventNames, item.kind) || !validDate(item.date))) {
+      throw new Error('项目资料格式不正确')
+    }
+    if (requestId !== latestRequestId) return
+    snapshot.value = data
+    repository.value = ''
+    kind.value = ''
+    page.value = 1
+  } catch (cause) {
+    if (requestId !== latestRequestId) return
+    error.value = cause instanceof Error ? cause.message : '项目资料加载失败'
+  } finally { if (requestId === latestRequestId) loading.value = false }
+}
+function resetPage() { page.value = 1 }
+function changePage(nextPage) {
+  if (nextPage >= 1 && nextPage <= totalPages.value) page.value = nextPage
+}
+async function showUpdates(name) {
+  repository.value = name
+  kind.value = ''
+  page.value = 1
+  await nextTick()
+  updatesTitle.value?.focus({ preventScroll: true })
+  updatesTitle.value?.scrollIntoView({ block: 'start' })
+}
+onMounted(loadProjects)
 </script>
 
 <template>
-  <section class="about-page">
-    <header class="page-heading">
-      <div>
-        <h1>关于</h1>
-        <p>{{ siteProfile.tagline }}</p>
+  <div class="about-v2">
+    <section class="about-intro" aria-labelledby="about-title">
+      <div class="about-portrait"><ProfileAvatar /><p>FIREFLY / FIELD NOTES</p><span class="about-portrait-copy">{{ siteProfile.profileDescription }}</span></div>
+      <div class="about-introduction">
+        <p class="v2-eyebrow">ABOUT / BEHIND THE NOTES</p>
+        <h1 id="about-title">你好，我是<br><span>{{ siteProfile.nickname }}。</span></h1>
+        <p class="about-tagline">{{ siteProfile.tagline }}</p>
+        <p v-for="(paragraph, index) in siteProfile.aboutParagraphs" :key="index">{{ paragraph }}</p>
+        <div class="about-actions">
+          <a v-if="githubLink" :href="githubLink" target="_blank" rel="noopener noreferrer">{{ siteProfile.githubName || 'GitHub' }} ↗</a>
+          <RouterLink to="/diary">公开日记 →</RouterLink><RouterLink to="/topics">内容地图 →</RouterLink>
+        </div>
       </div>
-    </header>
-
-    <article class="about-card" aria-labelledby="about-author">
-      <h2 id="about-author">{{ siteProfile.nickname }}</h2>
-      <!-- 静态段落按原顺序展示；修改文案不会改变其他页面的数据。 -->
-      <p v-for="(paragraph, index) in siteProfile.aboutParagraphs" :key="index">
-        {{ paragraph }}
-      </p>
-      <p v-if="siteProfile.githubUrl">
-        <a :href="siteProfile.githubUrl" target="_blank" rel="noopener noreferrer">
-          {{ siteProfile.githubName || 'GitHub' }} ↗
-        </a>
-      </p>
-    </article>
-
-    <section class="about-card" aria-labelledby="about-content">
-      <h2 id="about-content">这里有什么</h2>
-      <dl>
-        <div>
-          <dt>笔记</dt>
-          <dd>整理学习中的知识、问题与解决过程。</dd>
-        </div>
-        <div>
-          <dt>心得</dt>
-          <dd>记录阅读、实践与思考后的理解。</dd>
-        </div>
-        <div>
-          <dt>日记</dt>
-          <dd>分享愿意公开的生活片段。</dd>
-        </div>
-        <div>
-          <dt>资源</dt>
-          <dd>收集有用的网站、工具和学习资料。</dd>
-        </div>
-      </dl>
     </section>
 
-    <nav class="about-links" aria-label="站内内容入口">
-      <RouterLink to="/">阅读文章</RouterLink>
-      <RouterLink to="/archive">按年月归档</RouterLink>
-      <RouterLink to="/resources">查看资源</RouterLink>
-    </nav>
-  </section>
-</template>
+    <section v-if="directions.length" class="about-section" aria-labelledby="about-learning">
+      <p class="v2-eyebrow">LEARNING / IN PROGRESS</p><h2 id="about-learning">正在学习</h2>
+      <div class="about-grid"><article v-for="item in directions" :key="item.title" class="about-info-card"><h3>{{ item.title }}</h3><p v-if="item.description">{{ item.description }}</p></article></div>
+    </section>
 
-<style scoped>
-.about-card {
-  padding: clamp(20px, 3vw, 28px);
-  margin-bottom: 20px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background: var(--color-surface);
-}
-.about-card h2 { margin-top: 0; }
-.about-page p, .about-page dd { line-height: 1.8; color: var(--color-muted); overflow-wrap: anywhere; }
-.about-page h2 { overflow-wrap: anywhere; }
-.about-card dl { margin-bottom: 0; }
-.about-card dl > div + div { margin-top: 16px; }
-.about-card dt { font-weight: 700; }
-.about-card dd { margin: 4px 0 0; }
-.about-card a { color: var(--color-accent); overflow-wrap: anywhere; }
-.about-links { display: flex; flex-wrap: wrap; gap: 12px; }
-.about-links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 10px 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface-raised);
-  color: var(--color-accent);
-}
-.about-links a:hover { border-color: var(--color-accent); }
-</style>
+    <section class="about-section" aria-labelledby="about-projects">
+      <header class="about-section-heading"><div><p class="v2-eyebrow">BUILD / IN PUBLIC</p><h2 id="about-projects">公开项目</h2></div><span v-if="snapshot">{{ projects.length }} 个项目</span></header>
+      <div v-if="loading" class="v2-state" role="status">正在读取项目与更新…</div>
+      <div v-else-if="error" class="v2-state" role="alert"><p>{{ error }}</p><button type="button" @click="loadProjects">重新加载项目</button></div>
+      <template v-else-if="snapshot">
+        <p class="about-source">来自 {{ snapshot.owner }} 的公开仓库 · 资料同步于 {{ dateText(snapshot.syncedAt) }} {{ timeText(snapshot.syncedAt) }}（北京时间）</p>
+        <div v-if="!projects.length" class="v2-state">暂时没有公开项目。</div>
+        <template v-else>
+          <div v-if="languages.length" class="about-languages" aria-label="公开项目使用的主要语言"><span v-for="language in languages" :key="language">{{ language }}</span></div>
+          <div class="about-grid">
+            <article v-for="project in projects" :key="project.id" class="about-project">
+              <div class="about-project-meta"><span>{{ project.language || '公开仓库' }}</span><span v-if="project.fork">Fork</span><span v-if="project.archived">已归档</span></div>
+              <h3><a v-if="externalLink(project.url)" :href="externalLink(project.url)" target="_blank" rel="noopener noreferrer">{{ project.name }} ↗</a><span v-else>{{ project.name }}</span></h3>
+              <p>{{ project.description || '项目说明见仓库 README。' }}</p>
+              <footer><small v-if="project.pushedAt">最近推送 {{ dateText(project.pushedAt) }}</small><button type="button" @click="showUpdates(project.fullName)">查看更新 →</button></footer>
+            </article>
+          </div>
+        </template>
+      </template>
+    </section>
+
+    <section v-if="snapshot" class="about-section" aria-labelledby="project-updates">
+      <p class="v2-eyebrow">CHANGELOG / A CONTINUING STORY</p><h2 id="project-updates" ref="updatesTitle" tabindex="-1">项目更新链</h2>
+      <p class="about-source">推送与 Release 使用各自事件日期；历史提交按提交记录日期排列，不等同于推送时间。日期均为北京时间。</p>
+      <details class="about-history-note"><summary>更新记录的范围</summary><p>每个仓库的公开推送活动仅提供近30天、最多300条；同步过的推送会继续保留。Release来自当前公开发布记录，历史提交覆盖当前可见分支。此处不代表所有历史推送均可恢复。</p></details>
+      <div class="about-update-filters">
+        <label>项目<select v-model="repository" @change="resetPage"><option value="">全部项目</option><option v-for="project in projects" :key="project.id" :value="project.fullName">{{ project.name }}</option></select></label>
+        <label>记录类型<select v-model="kind" @change="resetPage"><option value="">全部记录</option><option value="PUSH">推送</option><option value="RELEASE">Release</option><option value="COMMIT">历史提交</option></select></label>
+        <p role="status">共 {{ filteredEvents.length }} 条记录</p>
+      </div>
+      <div v-if="!filteredEvents.length" class="v2-state">当前条件下暂无更新记录。</div>
+      <ol v-else class="about-updates">
+        <li v-for="event in visibleEvents" :key="event.id">
+          <time :datetime="event.date">{{ dateText(event.date) }}<small>{{ timeText(event.date) }}</small></time>
+          <div><div class="about-update-meta"><span>{{ eventNames[event.kind] }}</span><span>{{ event.repo }}</span><span v-if="event.prerelease">预发布</span></div>
+            <h3><a v-if="externalLink(event.url)" :href="externalLink(event.url)" target="_blank" rel="noopener noreferrer">{{ event.title }} ↗</a><span v-else>{{ event.title }}</span></h3></div>
+        </li>
+      </ol>
+      <ArticlePagination aria-label="更新分页" :page="page" :total-pages="totalPages" :loading="false" @change="changePage" />
+    </section>
+
+    <section v-if="experiences.length" class="about-section" aria-labelledby="about-experiences">
+      <p class="v2-eyebrow">MILESTONES / ALONG THE WAY</p><h2 id="about-experiences">一些经历</h2>
+      <div class="about-grid"><article v-for="item in experiences" :key="item.title" class="about-info-card"><small v-if="item.period">{{ item.period }}</small><h3>{{ item.title }}</h3><p v-if="item.description">{{ item.description }}</p></article></div>
+    </section>
+    <section v-if="contacts.length" class="about-section" aria-labelledby="about-contact"><h2 id="about-contact">保持联系</h2><div class="about-actions"><a v-for="item in contacts" :key="item.label" :href="externalLink(item.url)" target="_blank" rel="noopener noreferrer">{{ item.label }} ↗</a></div></section>
+    <nav class="about-explore" aria-label="继续探索"><RouterLink to="/">阅读笔记 →</RouterLink><RouterLink to="/archive">沿时间回看 →</RouterLink><RouterLink to="/resources">资源收藏 →</RouterLink></nav>
+  </div>
+</template>

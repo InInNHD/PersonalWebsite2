@@ -33,7 +33,7 @@ function list(initialQuery,fetch){
   const script=parse(code('views/ArticleListView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
   const scope=effectScope()
   const bindings={ref,computed,watch,onBeforeUnmount:f=>cleanup.push(f),onMounted:()=>{},onBeforeRouteLeave:()=>{},useRoute:()=>route,useRouter:()=>router,fetch,window:{scrollX:0,scrollY:100},...nav}
-  scope.run(()=>{app=new Function(...Object.keys(bindings),`${script};return {type,categoryId,tagId,keyword,keywordInput,page,totalPages,articles,error,loading,selectType,selectCategory,selectTag,searchArticles,clearSearch,clearAll,changePage,loadArticles}`)(...Object.values(bindings))})
+  scope.run(()=>{app=new Function(...Object.keys(bindings),`${script};return {type,categoryId,tagId,keyword,keywordInput,page,totalPages,articles,error,loading,selectType,selectCategory,searchArticles,clearSearch,clearAll,changePage,loadArticles}`)(...Object.values(bindings))})
   return {...app,route,router,history,leave:()=>{cleanup.forEach(fn=>fn());scope.stop()}}
 }
 

@@ -25,9 +25,21 @@
 
 第三轮[第14节3A阅读基础](docs/14-v2-article-reading.md)已完成实际验收：文章头部、正文布局、唯一章节锚点与目录、约计阅读时长、阅读进度和回顶均正常。实际前端23项及构建通过，浏览器长文/四档宽度/错误恢复/B2返回检查通过，真实个人库公开详情、草稿404及五表校验值复核通过，见[3A验收记录](docs/V2-READING-FOUNDATION-ACCEPTANCE.md)。[第15节3B](docs/15-v2-reading-media.md)也已完成实际验收：代码高亮、语言标签、复制反馈和正文图片查看正常；实际28项前端测试、构建、四档宽度和3A/B2回归通过，见[3B验收记录](docs/V2-READING-MEDIA-ACCEPTANCE.md)。[第16节3C](docs/16-v2-reading-neighbors.md)及第三轮本地功能验收也已通过：实际前端34项、隔离MySQL后端18项及两端构建通过；整轮目录/代码/图片/前后篇组合、错误恢复、四档宽度、原筛选及629px位置恢复正常，个人库3篇公开导航和草稿404核对通过，五表校验值未变化。见[第三轮验收记录](docs/V2-READING-NAVIGATION-ACCEPTANCE.md)。第三轮已纳入v0.8.0阶段性预发布；后续第四轮内容导航与个人展示。
 
-归档页路径为 `/archive`；公开接口 `/api/articles/archive` 返回月份及文章数，列表接口支持可选的 `month=YYYY-MM` 参数。归档只包含已发布文章，以首次发布时间归属年月。
+第四轮按4A分类/标签导航、4B归档与公开日记时间线、4C个人展示拆分。[第17节4A](docs/17-v2-topics.md)已完成实际验收：内容地图、公开计数、分类标签入口、主题分页与连续阅读返回正常；实际前端41项、隔离MySQL后端21项、两端构建、7组HTTP及四档宽度浏览器检查通过。个人库公开主题计数与数据库一致，五表校验值未变，业务代码无需修正，见[4A验收记录](docs/V2-TOPICS-ACCEPTANCE.md)。本节无迁移和新依赖，尚非第四轮新Release节点。[第18节4B](docs/18-v2-timeline.md)也已完成实际验收：前端46项、隔离MySQL后端24项、两端构建、7组HTTP及浏览器跨年/分页/连续阅读返回/错误重试/手机流程通过，个人库只读核对正常，见[4B验收记录](docs/V2-TIMELINE-ACCEPTANCE.md)。[第19节4C](docs/19-v2-profile-projects.md)及第四轮组合验收已于2026-10-21通过：实际前端54项、隔离MySQL后端24项、两端构建、7组HTTP和浏览器流程正常；6个公开项目及推送19条/Release17条/历史提交116条已生成本站快照。个人库零写入，五表校验值未变，详见[4C与整轮验收](docs/V2-PROFILE-ACCEPTANCE.md)。第四轮已纳入v0.9.0阶段性预发布，[发布说明](docs/RELEASE-v0.9.0.md)包含完整更新与验收范围。下一阶段为第五轮写作后台重构。
+
+归档页为 `/archive`，独立公开日记页为 `/diary`；公开接口 `/api/articles/archive` 返回月份及文章数，可选 `type=DIARY` 只统计公开日记。列表接口复用 `month=YYYY-MM`、`type=DIARY` 和分页参数。两页网址保存月份/页码，正文及连续阅读保留来源与返回位置；只包含已发布文章，以首次发布时间归属年月。
 
 公开文章列表 `/api/articles` 现在返回分页对象：`items`、`total`、`page`、`size`、`totalPages`；默认第一页、每页 10 篇。升级时需同步前后端，旧数组解析方式不再适用。详情及管理员文章接口的返回格式不变。
+
+## GitHub公开项目资料同步
+
+关于页读取`frontend/public/github-profile.json`，该公开快照随源码提交。首次生成及每次推送/发布后，在项目根目录运行：
+
+```powershell
+node frontend/scripts/sync-github.mjs
+```
+
+命令使用`siteProfile.githubName`读取全部公开仓库及可核对更新；完整成功才替换快照，失败保留旧文件。生成后重新构建前端。访客浏览无需GitHub token或Java接口；可选token只放本机同步进程环境，不写入前端配置或JSON。推送、Release、历史提交分别记录日期，未保存且已超出GitHub活动窗口的推送无法恢复。
 
 ## 环境准备
 
@@ -125,7 +137,7 @@ npm run dev
 
 ```powershell
 cd E:\PersonalWebsite2\frontend
-node --test tests/category-flow.test.mjs tests/presentation-flow.test.mjs tests/navigation-flow.test.mjs tests/reading-flow.test.mjs tests/reading-media-flow.test.mjs tests/reading-neighbors-flow.test.mjs
+node --test tests/*.test.mjs
 npm run build
 ```
 
@@ -137,8 +149,8 @@ cd E:\PersonalWebsite2\personalwebsite
 .\mvnw.cmd package
 ```
 
-本轮导航三项专项位于 `docs/checks/ArticleNavigationGuideTests.java`，在适配专用库名前缀的隔离副本中执行；上述 Maven 命令只运行 `personalwebsite/src/test` 内的15项测试。18项整轮验收及范围见 `docs/RELEASE-v0.8.0.md`。
+导航、主题、归档日记共9项专项位于 `docs/checks/ArticleNavigationGuideTests.java`、`TopicGuideTests.java` 和 `TimelineGuideTests.java`，在适配专用库名前缀的隔离副本中执行；上述 Maven 命令只运行 `personalwebsite/src/test` 内的15项测试。24项整轮验收及范围见 `docs/RELEASE-v0.9.0.md`。
 
 后端流程测试连接真实 MySQL，需要完整的五张表。测试中的写入通过事务回滚，MySQL 自增编号仍可能前进；建议使用独立测试数据库。`CategoryArticleFlowTests` 使用的固定密码仅属于测试上下文。
 
-最新 `v0.8.0` 预发布包含阅读目录、进度、代码高亮/复制、图片查看和公开前后篇导航，完整说明见 `docs/RELEASE-v0.8.0.md`；此前版本见 `docs/RELEASE-v0.7.0.md`。从 v0.7.0 升级无需新增数据库迁移，更新前后端并运行 `npm ci` 安装锁定依赖后重新构建/启动；更早版本按上方说明补齐尚未执行的005。Release 提供源码下载，运行时仍需自行准备环境、数据库及本地配置。
+最新 `v0.9.0` 预发布包含主题导航、归档/公开日记时间线、个人资料和GitHub公开项目更新链，完整说明见 `docs/RELEASE-v0.9.0.md`；此前版本见 `docs/RELEASE-v0.8.0.md`。从 v0.8.0 升级无需新增依赖或数据库迁移，更新前后端并重新构建/启动；更早版本按上方说明补齐尚未执行的005。Release 提供源码下载，运行时仍需自行准备环境、数据库及本地配置。
