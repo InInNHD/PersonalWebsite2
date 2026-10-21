@@ -78,7 +78,7 @@ public class ArticleController {
             SELECT DATE_FORMAT(published_at, '%Y-%m') AS archive_month,
                    COUNT(*) AS article_count
             FROM article
-            WHERE status = 'PUBLISHED' AND published_at IS NOT NULL
+            WHERE status = 'PUBLISHED' AND deleted_at IS NULL AND published_at IS NOT NULL
             """;
         List<Object> parameters = new ArrayList<>();
         if (type != null) {
@@ -121,7 +121,7 @@ public class ArticleController {
         String fromWhere = """
             FROM article a
             LEFT JOIN category c ON c.id = a.category_id
-            WHERE a.status = 'PUBLISHED'
+            WHERE a.status = 'PUBLISHED' AND a.deleted_at IS NULL
             """;
         List<Object> parameters = new ArrayList<>();
 
@@ -242,7 +242,7 @@ public class ArticleController {
                        c.name AS category_name
                 FROM article a
                 LEFT JOIN category c ON c.id = a.category_id
-                WHERE a.id = ? AND a.status = 'PUBLISHED'
+                WHERE a.id = ? AND a.status = 'PUBLISHED' AND a.deleted_at IS NULL
                 """;
 
         List<ArticleDetail> rows = jdbcTemplate.query(

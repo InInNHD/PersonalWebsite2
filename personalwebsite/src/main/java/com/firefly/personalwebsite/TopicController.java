@@ -26,7 +26,7 @@ public class TopicController {
         var categories = jdbcTemplate.query("""
                 SELECT c.id, c.name, COUNT(*) AS total
                 FROM category c JOIN article a ON a.category_id = c.id
-                WHERE a.status = 'PUBLISHED'
+                WHERE a.status = 'PUBLISHED' AND a.deleted_at IS NULL
                 GROUP BY c.id, c.name ORDER BY total DESC, c.id ASC
                 """, (rs, rowNum) -> new TopicItem(
                 rs.getString("id"), rs.getString("name"), rs.getLong("total")));
@@ -37,7 +37,7 @@ public class TopicController {
                 SELECT t.id, t.name, COUNT(DISTINCT a.id) AS total
                 FROM tag t JOIN article_tag link ON link.tag_id = t.id
                 JOIN article a ON a.id = link.article_id
-                WHERE a.status = 'PUBLISHED'
+                WHERE a.status = 'PUBLISHED' AND a.deleted_at IS NULL
                 GROUP BY t.id, t.name ORDER BY total DESC, t.id ASC
                 """, (rs, rowNum) -> new TopicItem(
                 rs.getString("id"), rs.getString("name"), rs.getLong("total")));

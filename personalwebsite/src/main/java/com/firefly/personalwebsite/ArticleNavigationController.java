@@ -36,7 +36,7 @@ public class ArticleNavigationController {
         // 先验证当前文章。草稿、已下线和不存在的编号使用同一种404。
         List<ArticleLink> currentRows = jdbcTemplate.query("""
                 SELECT id, title, published_at FROM article
-                WHERE id = ? AND status = 'PUBLISHED' AND published_at IS NOT NULL
+                WHERE id = ? AND status = 'PUBLISHED' AND deleted_at IS NULL AND published_at IS NOT NULL
                 """, LINK_MAPPER, id);
         if (currentRows.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "文章不存在");
@@ -47,7 +47,7 @@ public class ArticleNavigationController {
         // LIMIT在数据库内取最近一篇，不下载全站文章后在Java中查找。
         List<ArticleLink> previous = jdbcTemplate.query("""
                 SELECT id, title, published_at FROM article
-                WHERE status = 'PUBLISHED' AND published_at IS NOT NULL
+                WHERE status = 'PUBLISHED' AND deleted_at IS NULL AND published_at IS NOT NULL
                   AND (published_at < ? OR (published_at = ? AND id < ?))
                 ORDER BY published_at DESC, id DESC LIMIT 1
                 """, LINK_MAPPER, current.publishedAt(), current.publishedAt(), id);
@@ -55,7 +55,7 @@ public class ArticleNavigationController {
         // 下一篇=较新发布；不按置顶排序，也不受列表的分类、标签等筛选限制。
         List<ArticleLink> next = jdbcTemplate.query("""
                 SELECT id, title, published_at FROM article
-                WHERE status = 'PUBLISHED' AND published_at IS NOT NULL
+                WHERE status = 'PUBLISHED' AND deleted_at IS NULL AND published_at IS NOT NULL
                   AND (published_at > ? OR (published_at = ? AND id > ?))
                 ORDER BY published_at ASC, id ASC LIMIT 1
                 """, LINK_MAPPER, current.publishedAt(), current.publishedAt(), id);

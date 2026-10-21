@@ -21,12 +21,12 @@ public class SiteStatsController {
         // 不返回管理员总数后再让前端相减，否则会泄露隐藏内容数量。
         String sql = """
                 SELECT
-                  (SELECT COUNT(*) FROM article WHERE status = 'PUBLISHED') AS articles,
+                  (SELECT COUNT(*) FROM article WHERE status = 'PUBLISHED' AND deleted_at IS NULL) AS articles,
                   (SELECT COUNT(DISTINCT category_id) FROM article
-                   WHERE status = 'PUBLISHED') AS categories,
+                   WHERE status = 'PUBLISHED' AND deleted_at IS NULL) AS categories,
                   (SELECT COUNT(DISTINCT atg.tag_id) FROM article_tag atg
                    JOIN article a ON a.id = atg.article_id
-                   WHERE a.status = 'PUBLISHED') AS tags,
+                   WHERE a.status = 'PUBLISHED' AND a.deleted_at IS NULL) AS tags,
                   (SELECT COUNT(*) FROM resource_link WHERE published = TRUE) AS resources
                 """;
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new SiteStats(

@@ -8,7 +8,14 @@ import ArticleDetailView from './views/ArticleDetailView.vue'
 import './style.css'
 // 新配色和布局覆盖基础样式，顺序不能反过来。
 import './v2.css'
-import AdminView from './views/AdminView.vue'
+import AdminArticleEditorView from './views/AdminArticleEditorView.vue'
+import AdminTaxonomyView from './views/AdminTaxonomyView.vue'
+import AdminResourceView from './views/AdminResourceView.vue'
+import AdminLayout from './views/AdminLayout.vue'
+import AdminLoginView from './views/AdminLoginView.vue'
+import AdminArticleListView from './views/AdminArticleListView.vue'
+import { guardAdmin } from './adminSession.js'
+import './admin.css'
 import ResourceView from './views/ResourceView.vue'
 import ArchiveView from './views/ArchiveView.vue'
 import AboutView from './views/AboutView.vue'
@@ -32,7 +39,19 @@ const router = createRouter({
         { path: '/diary', component: ArchiveView },
         { path: '/resources', component: ResourceView },
         { path: '/about', component: AboutView },
-        { path: '/admin', component: AdminView },
+        {
+            path: '/admin', component: AdminLayout,
+            children: [
+                { path: '', redirect: '/admin/articles' },
+                { path: 'login', component: AdminLoginView, meta: { adminTitle: '管理员登录' } },
+                { path: 'articles', component: AdminArticleListView, meta: { requiresAdmin: true, adminTitle: '文章管理' } },
+                { path: 'articles/new', component: AdminArticleEditorView, meta: { requiresAdmin: true, adminTitle: '新建文章', adminSection: 'article' } },
+                { path: 'articles/:id/edit', component: AdminArticleEditorView, meta: { requiresAdmin: true, adminTitle: '编辑文章', adminSection: 'article' } },
+                { path: 'taxonomy', component: AdminTaxonomyView, meta: { requiresAdmin: true, adminTitle: '分类与标签' } },
+                { path: 'resources', component: AdminResourceView, meta: { requiresAdmin: true, adminTitle: '资源管理' } },
+                { path: ':pathMatch(.*)*', redirect: '/admin/articles' },
+            ],
+        },
 
     ],
 })
@@ -46,6 +65,7 @@ router.beforeEach(to => {
         return { path: to.path, query, hash, replace: true }
     }
 })
+router.beforeEach(guardAdmin)
 router.beforeResolve((to, from) => {
     prepareList(to, from)
     prepareReading(to, from)

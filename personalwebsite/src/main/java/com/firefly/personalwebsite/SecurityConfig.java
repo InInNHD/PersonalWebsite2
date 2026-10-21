@@ -22,7 +22,11 @@ public class SecurityConfig {
                 // 后台接口只允许管理员访问；现有文章阅读接口继续公开。
                 .requestMatchers("/api/admin/**").hasRole("ADMIN").anyRequest().permitAll())
         .httpBasic(Customizer.withDefaults())
-                .formLogin(form -> form.disable());
+                .formLogin(form -> form.disable())
+                // 使用Spring Security原生退出：校验CSRF、失效会话并清理安全上下文。
+                .logout(logout -> logout
+                        .logoutUrl("/api/admin/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)));
 
         // 保留 Spring Security 默认的 CSRF 保护；
         // 下一步写 POST/PUT 接口时会一并处理 CSRF token。
