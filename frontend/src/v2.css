@@ -86,6 +86,35 @@
 .v2-pagination button { font-size: 12px; }
 .v2-state { border: 1px dashed var(--color-border); border-radius: 12px; padding: 32px 24px; text-align: center; color: var(--color-muted); }
 .v2-state button { margin: 8px; }
+
+/* 第七轮：统一内容状态、骨架与键盘入口，沿用既有暗色规范。 */
+.skip-link { position:fixed; top:12px; left:12px; z-index:100; padding:12px 18px; border-radius:8px; background:var(--color-accent); color:var(--color-bg); transform:translateY(-200%); }
+.skip-link:focus { transform:none; }
+#main-content:focus { outline:none; }
+summary:focus-visible { outline:2px solid var(--color-accent); outline-offset:4px; border-radius:4px; }
+.page-state { min-width:0; padding:36px 28px; margin:20px 0; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); text-align:center; overflow-wrap:anywhere; }
+.page-state > h1, .page-state > h2, .page-state > h3 { color:var(--color-text); font-size:clamp(21px,2.6vw,28px); margin:0 0 14px; }
+.page-state > p:not(.page-state-code) { max-width:580px; margin:0 auto; line-height:1.9; color:var(--color-muted); }
+.page-state.error { border-color:var(--color-error); }
+.page-state.compact { padding:20px; text-align:left; }
+.page-state.compact > h2, .page-state.compact > h3 { font-size:18px; }
+.page-state.compact > p { margin-left:0; }
+.page-state-code { margin:0 0 24px; font:80px/1.2 Georgia,serif; letter-spacing:8px; color:var(--color-accent); }
+.page-state.not-found { max-width:780px; margin:40px auto; padding:64px 28px; }
+.page-state-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:24px; }
+.page-state.compact .page-state-actions { justify-content:flex-start; margin-top:16px; }
+.page-state-actions .v2-action { margin:0; }
+.page-skeleton { margin-top:28px; display:grid; gap:16px; text-align:left; }
+.page-skeleton.cards { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.page-skeleton-item { min-width:0; padding:18px; border:1px solid var(--color-border); border-radius:10px; }
+.page-skeleton i { display:block; height:12px; border-radius:5px; margin:12px 0; background:var(--color-surface-raised); animation:page-breathe 1.8s ease-in-out infinite; }
+.page-skeleton i:last-child { width:65%; }
+.page-skeleton i.page-skeleton-cover { height:100px; margin-top:0; }
+.page-skeleton.article .page-skeleton-cover { height:180px; }
+.page-skeleton.article i:not(.page-skeleton-cover) { margin-top:24px; }
+@keyframes page-breathe { 50% { opacity:.4; } }
+@media(max-width:700px) { .page-skeleton.cards { grid-template-columns:minmax(0,1fr); } .page-skeleton.cards .page-skeleton-item:nth-child(n+2) { display:none; } .page-state { padding:28px 18px; } .page-state.not-found { padding:40px 18px; } }
+@media(prefers-reduced-motion:reduce) { .page-skeleton i { animation:none; } }
 .v2-profile { border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); padding: 24px 22px; }
 .v2-avatar { display: grid; place-items: center; width: 62px; height: 62px; border: 1px solid #4a6758; border-radius: 50%; background: #263e34; color: var(--color-accent); font: italic 43px Georgia, serif; }
 .v2-profile h2 { font-size: 20px; margin: 16px 0 8px; }

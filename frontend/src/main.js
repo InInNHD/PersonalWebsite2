@@ -20,13 +20,14 @@ import ResourceView from './views/ResourceView.vue'
 import ArchiveView from './views/ArchiveView.vue'
 import AboutView from './views/AboutView.vue'
 import TopicView from './views/TopicView.vue'
+import NotFoundView from './views/NotFoundView.vue'
 
 // 首页显示文章列表；点击文章后通过 id 打开详情。
 const router = createRouter({
     history: createWebHistory(),
     // 首页等待列表渲染完成，再执行浏览器后退或正文返回的位置恢复。
     scrollBehavior(to, from, savedPosition) {
-        if (to.path.startsWith('/articles/')) {
+        if (/^\/articles\/[^/]+\/?$/.test(to.path)) {
             return readingScroll(to, savedPosition, () => router.currentRoute.value)
         }
         return listScroll(to, from, savedPosition, () => router.currentRoute.value)
@@ -52,7 +53,7 @@ const router = createRouter({
                 { path: ':pathMatch(.*)*', redirect: '/admin/articles' },
             ],
         },
-
+        { path: '/:pathMatch(.*)*', component: NotFoundView },
     ],
 })
 

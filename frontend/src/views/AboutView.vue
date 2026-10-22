@@ -1,4 +1,5 @@
 <script setup>
+import PageState from '../components/PageState.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { siteProfile } from '../siteProfile.js'
 import ProfileAvatar from '../components/ProfileAvatar.vue'
@@ -45,7 +46,7 @@ async function loadProjects() {
   snapshot.value = null
   try {
     // 读取本站同步快照，浏览页面时不向GitHub发请求，也不依赖Java服务。
-    const response = await fetch('/github-profile.json', { cache: 'no-cache' })
+    const response = await fetch('/github-profile.json', { cache: 'no-cache', signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`项目资料加载失败：HTTP ${response.status}`)
     const data = await response.json()
     if (data.schemaVersion !== 1 || data.owner !== siteProfile.githubName
@@ -107,11 +108,11 @@ onMounted(loadProjects)
 
     <section class="about-section" aria-labelledby="about-projects">
       <header class="about-section-heading"><div><p class="v2-eyebrow">BUILD / IN PUBLIC</p><h2 id="about-projects">公开项目</h2></div><span v-if="snapshot">{{ projects.length }} 个项目</span></header>
-      <div v-if="loading" class="v2-state" role="status">正在读取项目与更新…</div>
-      <div v-else-if="error" class="v2-state" role="alert"><p>{{ error }}</p><button type="button" @click="loadProjects">重新加载项目</button></div>
+      <PageState v-if="loading" kind="loading" layout="cards" title="正在读取项目与更新…" />
+      <PageState v-else-if="error" kind="error" title="项目资料暂时没能加载" :message="error" retry-label="重新加载项目" @retry="loadProjects" />
       <template v-else-if="snapshot">
         <p class="about-source">来自 {{ snapshot.owner }} 的公开仓库 · 资料同步于 {{ dateText(snapshot.syncedAt) }} {{ timeText(snapshot.syncedAt) }}（北京时间）</p>
-        <div v-if="!projects.length" class="v2-state">暂时没有公开项目。</div>
+        <PageState v-if="!projects.length" title="暂时没有公开项目" message="有新的公开作品时，会更新在这里。" />
         <template v-else>
           <div v-if="languages.length" class="about-languages" aria-label="公开项目使用的主要语言"><span v-for="language in languages" :key="language">{{ language }}</span></div>
           <div class="about-grid">
@@ -135,7 +136,7 @@ onMounted(loadProjects)
         <label>记录类型<select v-model="kind" @change="resetPage"><option value="">全部记录</option><option value="PUSH">推送</option><option value="RELEASE">Release</option><option value="COMMIT">历史提交</option></select></label>
         <p role="status">共 {{ filteredEvents.length }} 条记录</p>
       </div>
-      <div v-if="!filteredEvents.length" class="v2-state">当前条件下暂无更新记录。</div>
+      <PageState v-if="!filteredEvents.length" title="当前条件下暂无更新记录" message="可以切换项目或记录类型，继续看看。" />
       <ol v-else class="about-updates">
         <li v-for="event in visibleEvents" :key="event.id">
           <time :datetime="event.date">{{ dateText(event.date) }}<small>{{ timeText(event.date) }}</small></time>

@@ -9,7 +9,7 @@ const response=(data,status=200)=>new Response(status===204?null:JSON.stringify(
 function session(fetch){return new Function('ref','fetch',code('adminSession.js').replace(/^import[^\n]*\n/gm,'').replace(/export /g,'')+';return {adminConnected,adminRequest,loginAdmin,clearAdminSession,adminTarget,adminListQuery,guardAdmin,adminSessionError}')(ref,fetch)}
 function component(file,extra,names){
   const source=parse(code(file)).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
-  const bindings={ref,computed,reactive,nextTick,watch:()=>{},onMounted:()=>{},onBeforeUnmount:()=>{},MarkdownIt,notifyAdmin:()=>{},...extra}
+  const bindings={usePageMeta:()=>{},ref,computed,reactive,nextTick,watch:()=>{},onMounted:()=>{},onBeforeUnmount:()=>{},MarkdownIt,notifyAdmin:()=>{},...extra}
   return new Function(...Object.keys(bindings),source+';return {'+names+'}')(...Object.values(bindings))
 }
 const leave=()=>({discardOpen:ref(false),resolveDiscard:()=>{},askDiscard:()=>true,navigateSaved:async action=>action()})

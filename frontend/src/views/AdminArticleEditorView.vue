@@ -1,4 +1,6 @@
 <script setup>
+import PageState from '../components/PageState.vue'
+import { usePageMeta } from '../pageMeta.js'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownIt from 'markdown-it'
@@ -10,6 +12,7 @@ const route = useRoute(), router = useRouter()
 function emptyArticle() { return { id: null, title: '', summary: '', contentMarkdown: '', type: 'NOTE', status: 'DRAFT', categoryId: null, tagIds: [], coverUrl: '', pinned: false, deletedAt: null } }
 const form = reactive(emptyArticle()), categories = ref([]), tags = ref([])
 const busy = ref(false), loading = ref(false), ready = ref(false), error = ref(''), savedSnapshot = ref('')
+usePageMeta(() => form.id ? `编辑：${form.title || '文章'}` : '新建文章', '个人网站的文章编辑工作台。', true)
 const imageBusy = ref(false), imagePreviews = ref({})
 const localImages = computed(() => [...new Set([form.coverUrl, ...bodyMediaUrls.value].map(localMediaBase).filter(Boolean))])
 const mode = ref('split'), textarea = ref(null), action = ref('')
@@ -113,6 +116,7 @@ watch(() => route.params.id, loadDocument, { immediate: true })
 <template>
   <section class="studio-editor"><RouterLink :to="backTarget">← 返回文章管理</RouterLink>
     <header class="studio-page-heading"><div><p class="studio-eyebrow">WRITE / KEEP A LITTLE LIGHT</p><h1>{{ form.id === null ? '新建文章' : '编辑文章' }}</h1><p role="status">{{ loading ? '正在加载…' : busy ? '正在保存或处理…' : dirty ? '有未保存的修改' : form.id === null ? '尚未创建草稿' : '当前修改已保存' }}</p></div><span v-if="ready" class="studio-status">{{ form.deletedAt ? '已回收' : form.status === 'PUBLISHED' ? '已发布' : '草稿' }}</span></header>
+    <PageState v-if="loading" kind="loading" title="正在打开写作内容…" />
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <button v-if="!ready && !loading" type="button" @click="retryLoad">重新加载文章</button>
     <div v-if="ready && form.deletedAt" class="v2-state">这篇文章已回收，请到回收站恢复为草稿后再编辑。<RouterLink to="/admin/articles?recycled=true">打开回收站 →</RouterLink></div>

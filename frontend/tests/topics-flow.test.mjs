@@ -18,7 +18,7 @@ function app(query,fetch){
   const update=async target=>{const old={...route};const current={path:'/topics',query:nav.topicQuery(target.query),hash:target.hash??'',fullPath:'/topics?'+new URLSearchParams(nav.topicQuery(target.query))+(target.hash??'')};nav.prepareList(current,old);Object.assign(route,current);await settle()}
   const router={push:update,replace:update}
   let state
-  const bindings={ref,computed,watch,useRoute:()=>route,useRouter:()=>router,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),onBeforeRouteLeave:()=>{},window:{scrollX:0,scrollY:0},fetch,...nav,finishList:async key=>{finished.push({key,directoryVisible:state? !state.directoryLoading.value:false});await nav.finishList(key)}}
+  const bindings={usePageMeta:()=>{},ref,computed,watch,useRoute:()=>route,useRouter:()=>router,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),onBeforeRouteLeave:()=>{},window:{scrollX:0,scrollY:0},fetch,...nav,finishList:async key=>{finished.push({key,directoryVisible:state? !state.directoryLoading.value:false});await nav.finishList(key)}}
   const script=parse(code('views/TopicView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
   scope.run(()=>{state=new Function(...Object.keys(bindings),script+';return {directory,directoryLoading,directoryError,articles,loading,error,selected,page,total,totalPages,loadDirectory,loadArticles,changePage,topicLocation}')(...Object.values(bindings))})
   return {...state,route,router,nav,finished,mount:()=>mounted[0](),leave:()=>{leaves.forEach(fn=>fn());scope.stop()}}

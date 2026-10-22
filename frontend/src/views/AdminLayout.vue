@@ -38,7 +38,7 @@ function leaveAdmin() {
           </button>
         </div>
       </header>
-      <main class="studio-content">
+      <main id="main-content" tabindex="-1" class="studio-content">
         <p v-if="adminSessionError" class="error" role="alert">{{ adminSessionError }}</p>
         <p v-if="adminNotice" class="studio-notice" role="status">{{ adminNotice }}</p>
         <form v-if="route.meta.requiresAdmin && !adminConnected" class="studio-reauth" @submit.prevent="verifyAgain">

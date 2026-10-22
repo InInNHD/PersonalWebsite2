@@ -1,4 +1,5 @@
 <script setup>
+import PageState from '../components/PageState.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { adminRequest, adminListQuery, notifyAdmin } from '../adminSession.js'
@@ -73,10 +74,10 @@ onMounted(loadCategories)
     </fieldset></form>
     <p v-if="taxonomyError" class="error" role="alert">分类读取失败：{{ taxonomyError }} <button type="button" @click="loadCategories">重试分类</button></p>
     <div class="studio-list-toolbar"><p v-if="result" role="status">共 {{ result.total }} 篇匹配记录</p><button type="button" :disabled="loading || busy" @click="loadArticles">刷新列表</button></div>
-    <p v-if="loading" class="v2-state" role="status">正在读取文章…</p>
-    <div v-else-if="error" class="v2-state" role="alert"><p>{{ error }}</p><button type="button" :disabled="busy" @click="loadArticles">重新加载文章</button></div>
+    <PageState v-if="loading" kind="loading" title="正在读取文章…" />
+    <PageState v-else-if="error" kind="error" title="文章列表暂时没能加载" :message="error" retry-label="重新加载文章" @retry="!busy && loadArticles()" />
     <template v-else-if="result">
-      <p v-if="!result.items.length" class="v2-state">{{ recycled ? '当前条件下没有回收记录。' : '没有匹配的文章，可以调整筛选或新建草稿。' }}</p>
+      <PageState v-if="!result.items.length" :title="recycled ? '当前条件下没有回收记录' : '没有匹配的文章'" message="可以调整筛选条件，或新建一篇草稿。" />
       <ul v-else class="studio-article-list"><li v-for="article in result.items" :key="article.id">
         <div><div class="studio-row-meta"><span :class="['studio-status', { published: !recycled && article.status === 'PUBLISHED' }]">{{ recycled ? '已回收' : article.status === 'PUBLISHED' ? '已发布' : '草稿' }}</span><span>{{ typeNames[article.type] }}</span><span>{{ article.categoryName || '未分类' }}</span><span v-if="article.pinned">置顶</span></div><h2><span v-if="recycled">{{ article.title }}</span><RouterLink v-else :to="editorLocation(article.id)">{{ article.title }}</RouterLink></h2><small>编号 {{ article.id }} · {{ article.updatedAt ? '更新于 ' + article.updatedAt.replace('T', ' ').slice(0, 16) : '尚无更新时间' }}</small></div>
         <div class="studio-row-actions"><template v-if="!recycled"><RouterLink :to="editorLocation(article.id)" :aria-label="`编辑：${article.title}`">继续编辑 →</RouterLink><button v-if="article.status === 'PUBLISHED'" type="button" :disabled="busy" @click="confirmation = { article, action: 'unpublish' }">撤回公开</button><button type="button" :disabled="busy" @click="confirmation = { article, action: 'recycle' }">回收</button></template><button v-else type="button" :disabled="busy" @click="confirmation = { article, action: 'restore' }">恢复为草稿</button></div>

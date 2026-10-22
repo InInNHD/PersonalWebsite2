@@ -1,4 +1,6 @@
 <script setup>
+import PageState from '../components/PageState.vue'
+import { usePageMeta } from '../pageMeta.js'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { archiveQuery, finishList, listKey, rememberList } from '../listNavigation.js'
@@ -39,6 +41,7 @@ const yearGroups = computed(() => {
   }
   return groups
 })
+usePageMeta(() => `${diary.value ? '公开日记' : '文章归档'}${selectedMonth.value ? ' · ' + selectedMonth.value : ''}`, () => diary.value ? '精选公开的生活片段，按月份回看。' : '按年月回看已发布的笔记、心得与日记。')
 let latestRequestId = 0
 let latestDirectoryId = 0
 let disposed = false
@@ -73,7 +76,7 @@ async function loadArticles() {
   try {
     const params = new URLSearchParams({ month: selectedMonth.value, page: String(page.value), size: '10' })
     if (diary.value) params.set('type', 'DIARY')
-    const response = await fetch(`/api/articles?${params}`)
+    const response = await fetch(`/api/articles?${params}`, { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`记录加载失败：HTTP ${response.status}`)
     const data = await response.json()
     if (requestId !== latestRequestId || key !== listKey(route)) return
@@ -107,7 +110,7 @@ async function loadArchive() {
   total.value = 0
   totalPages.value = 0
   try {
-    const response = await fetch(diary.value ? '/api/articles/archive?type=DIARY' : '/api/articles/archive')
+    const response = await fetch(diary.value ? '/api/articles/archive?type=DIARY' : '/api/articles/archive', { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`月份目录加载失败：HTTP ${response.status}`)
     const data = await response.json()
     if (disposed || requestId !== latestDirectoryId || path !== route.path) return
@@ -149,13 +152,11 @@ onMounted(loadArchive)
       <p>{{ diary ? '收藏生活里的微光。这里只展示选择公开的记录。' : '沿着时间的线索，回看笔记、心得与公开的生活记录。' }}</p>
       <RouterLink :to="diary ? '/archive' : '/diary'">{{ diary ? '浏览全部归档 →' : '只看公开日记 →' }}</RouterLink>
     </header>
-    <div v-if="directoryLoading" class="v2-state" role="status">正在整理月份目录…</div>
-    <div v-else-if="directoryError" class="v2-state" role="alert">
-      <p>{{ directoryError }}</p><button type="button" @click="loadArchive">重新加载月份</button>
-    </div>
+    <PageState v-if="directoryLoading" kind="loading" title="正在整理月份目录…" />
+    <PageState v-else-if="directoryError" kind="error" title="月份目录暂时没能加载" :message="directoryError" retry-label="重新加载月份" @retry="loadArchive" />
     <template v-else-if="months">
       <p class="timeline-total">{{ diary ? '公开日记' : '公开记录' }} {{ publicTotal }} 篇 · {{ months.length }} 个月</p>
-      <div v-if="!months.length" class="v2-state">{{ diary ? '暂时没有公开日记。' : '暂时没有已发布的文章。' }}</div>
+      <PageState v-if="!months.length" :title="diary ? '暂时没有公开日记' : '暂时没有已发布的文章'" message="只收录选择公开的记录。可以先浏览其他内容。"><RouterLink class="v2-action" to="/">回到首页 →</RouterLink></PageState>
       <div v-else class="timeline-layout">
         <nav class="timeline-months" aria-label="按年月浏览">
           <label class="timeline-month-select">快速选择月份
@@ -178,14 +179,12 @@ onMounted(loadArchive)
         </nav>
         <section id="entries" class="timeline-results" :aria-busy="loading" aria-labelledby="timeline-month-title">
           <header><p class="v2-eyebrow">{{ diary ? 'SELECTED DIARY' : 'PUBLISHED RECORDS' }}</p><h2 id="timeline-month-title">{{ monthLabel }}</h2></header>
-          <div v-if="!selected" class="v2-state">这个月暂时没有公开记录，请选择其他月份。</div>
-          <div v-else-if="loading" class="v2-state" role="status">正在查找这个月的记录…</div>
-          <div v-else-if="error" class="v2-state" role="alert">
-            <p>{{ error }}</p><button type="button" @click="loadArticles">重新加载记录</button>
-          </div>
+          <PageState v-if="!selected" title="这个月没有公开记录" message="请选择其他月份，或回到最近的一次记录。" retry-label="查看最新月份" @retry="router.push(monthLocation(months[0].month))" />
+          <PageState v-else-if="loading" kind="loading" title="正在查找这个月的记录…" />
+          <PageState v-else-if="error" kind="error" title="记录暂时没能加载" :message="error" retry-label="重新加载记录" @retry="loadArticles" />
           <template v-else>
             <p class="topics-note" role="status">{{ selectedMonth }} · 共 {{ total }} 篇{{ diary ? '公开日记' : '公开记录' }}</p>
-            <div v-if="!articles.length" class="v2-state">这个月暂时没有公开记录。</div>
+            <PageState v-if="!articles.length" title="这个月暂时没有公开记录" message="可以选择其他月份继续浏览。" />
             <ol v-else class="timeline-items">
               <li v-for="article in articles" :key="article.id">
                 <time :datetime="article.publishedAt">{{ article.publishedAt?.slice(5, 10) }}</time>

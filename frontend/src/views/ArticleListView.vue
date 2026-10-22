@@ -1,4 +1,5 @@
 <script setup>
+import PageState from '../components/PageState.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { siteProfile } from '../siteProfile.js'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
@@ -23,6 +24,7 @@ const error = ref('')
 const articleCategories = ref([])
 const categoryId = ref('')
 const categoryError = ref('')
+const topicLoading = ref(false)
 const tags = ref([])
 const tagId = ref('') // 空字符串表示全部标签；选择标签后是数字编号。
 const tagError = ref('')
@@ -74,7 +76,7 @@ async function loadArticles() {
     params.set('page', String(page.value))
     params.set('size', String(pageSize))
 
-    const response = await fetch(`/api/articles?${params.toString()}`)
+    const response = await fetch(`/api/articles?${params.toString()}`, { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`请求失败：HTTP ${response.status}`)
     const data = await response.json()
     // 列表与总数、页码都必须通过同一个请求编号检查。
@@ -139,18 +141,20 @@ function changePage(nextPage) {
 
 // 首页只展示被公开文章使用的分类和标签；管理端保留原全量接口。
 async function loadTopics() {
+  if (topicLoading.value || disposed) return
+  topicLoading.value = true
   categoryError.value = ''
   tagError.value = ''
   try {
-    const response = await fetch('/api/topics')
+    const response = await fetch('/api/topics', { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const data = await response.json()
     if (disposed) return
     articleCategories.value = data.categories
     tags.value = data.tags
   } catch {
-    if (!disposed) categoryError.value = '主题加载失败，文章仍可阅读；请刷新页面重试。'
-  }
+    if (!disposed) categoryError.value = '主题加载失败，文章仍可阅读。'
+  } finally { if (!disposed) topicLoading.value = false }
 }
 onMounted(loadTopics)
 
@@ -264,18 +268,12 @@ function clearAll() {
           {{ categoryId !== '' ? '已选分类' : '' }} {{ tagId !== '' ? '已选标签' : '' }}
           <button type="button" class="v2-type" @click="filtersExpanded = true">查看条件</button>
         </p>
-        <p v-if="categoryError" class="error" role="alert">{{ categoryError }}</p>
-        <p v-if="tagError" class="error" role="alert">{{ tagError }}</p>
-
-        <div v-if="loading" class="v2-state" role="status">正在整理内容，请稍候…</div>
-        <div v-else-if="error" class="v2-state" role="alert">
-          <h3>内容暂时没能加载</h3><p>{{ error }}</p>
-          <button type="button" @click="loadArticles">重新加载文章</button>
-        </div>
-        <div v-else-if="articles.length === 0" class="v2-state">
-          <h3>暂时没有找到记录</h3><p>当前搜索或筛选条件下没有已发布的文章。</p>
-          <button type="button" @click="clearAll">清空全部条件</button>
-        </div>
+        <p v-if="topicLoading" class="v2-meta" role="status">正在读取分类与标签…</p>
+        <PageState v-if="categoryError" compact kind="error" heading="h3" title="分类与标签暂时无法加载" :message="categoryError" retry-label="重新加载分类标签" @retry="loadTopics" />
+        <PageState v-if="loading" kind="loading" layout="cards" heading="h3" title="正在整理内容，请稍候…" />
+        <PageState v-else-if="error" kind="error" heading="h3" title="内容暂时没能加载" :message="error" retry-label="重新加载文章" @retry="loadArticles" />
+        <PageState v-else-if="articles.length === 0 && (type || categoryId || tagId || keyword)" heading="h3" title="暂时没有找到记录" message="当前搜索或筛选条件下没有已发布的文章。" retry-label="清空全部条件" @retry="clearAll" />
+        <PageState v-else-if="articles.length === 0" heading="h3" title="第一篇公开记录，还在路上" message="笔记与生活会慢慢整理到这里。也可以先看看资源与个人介绍。"><RouterLink class="v2-action" to="/resources">浏览资源 →</RouterLink><RouterLink class="v2-action" to="/about">关于作者 →</RouterLink></PageState>
         <div v-else class="v2-grid">
           <ArticleCard v-for="(article, index) in articles" :key="article.id" :article="article"
                        :featured="page === 1 && index === 0" :return-to="route.fullPath" />

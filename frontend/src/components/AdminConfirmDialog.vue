@@ -5,7 +5,7 @@ const emit = defineEmits(['resolve'])
 const dialog = ref(null)
 let previousFocus
 onMounted(() => { previousFocus = document.activeElement; dialog.value.showModal() })
-onBeforeUnmount(() => { dialog.value?.close(); if (previousFocus?.isConnected) previousFocus.focus() })
+onBeforeUnmount(() => { dialog.value?.close(); if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true }) })
 </script>
 <template>
   <dialog ref="dialog" class="studio-dialog" aria-labelledby="admin-confirm-title" aria-describedby="admin-confirm-message" @cancel.prevent="emit('resolve', false)">

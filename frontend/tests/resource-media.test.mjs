@@ -7,7 +7,7 @@ import MarkdownIt from 'markdown-it'
 const code = name => readFileSync(new URL('../src/' + name, import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 function component(name, extra, names) {
   const source = parse(code(name)).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm, '')
-  const values = { ref, reactive, computed, nextTick, onMounted: () => {}, onBeforeUnmount: () => {}, watch: () => {}, ...extra }
+  const values = {usePageMeta:()=>{}, ref, reactive, computed, nextTick, onMounted: () => {}, onBeforeUnmount: () => {}, watch: () => {}, ...extra }
   return new Function(...Object.keys(values), source + ';return {' + names + '}')(...Object.values(values))
 }
 test('第六轮资源页、图标、图片库和两个管理页面实际模板可编译', () => {

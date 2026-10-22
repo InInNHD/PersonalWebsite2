@@ -30,7 +30,7 @@ async function loadNeighbors() {
   previous.value = null
   next.value = null
   try {
-    const response = await fetch(`/api/articles/${encodeURIComponent(props.articleId)}/neighbors`)
+    const response = await fetch(`/api/articles/${encodeURIComponent(props.articleId)}/neighbors`, { signal: AbortSignal.timeout(15000) })
     if (response.status === 404) throw new Error('当前文章已下线或不存在')
     if (!response.ok) throw new Error(`前后篇加载失败：HTTP ${response.status}`)
     const data = await response.json()

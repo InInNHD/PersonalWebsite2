@@ -1,4 +1,6 @@
 <script setup>
+import PageState from '../components/PageState.vue'
+import { usePageMeta } from '../pageMeta.js'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ResourceIcon from '../components/ResourceIcon.vue'
@@ -18,6 +20,7 @@ const groups = computed(() => {
 const visibleGroups = computed(() => groups.value.filter(group => selectedGroup.value === 'all' || selectedGroup.value === group.key).map(group => ({
   ...group, items: resources.value.filter(item => (item.groupId == null ? 'none' : String(item.groupId)) === group.key && `${item.title} ${item.description} ${item.recommendation ?? ''}`.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase())),
 })).filter(group => group.items.length))
+usePageMeta(() => selectedGroup.value === 'all' ? '资源收藏' : `${groups.value.find(group => group.key === selectedGroup.value)?.name || '资源'} · 资源收藏`, () => '按用途整理工具、网站与学习资料，分享使用体会。')
 const visibleCount = computed(() => visibleGroups.value.reduce((count, group) => count + group.items.length, 0))
 function change(next) { router.replace({ path: '/resources', query: { ...route.query, ...next } }) }
 function httpUrl(value) {
@@ -41,14 +44,14 @@ onMounted(loadResources)
 </script>
 <template>
   <section class="resource-library">
-    <header class="resource-hero"><p class="v2-eyebrow">COLLECT / SHARE / LEARN</p><h1>值得收藏的小工具与好资料。</h1><p>按用途整理，留下一点使用体会。愿这些收藏也能帮到你。</p><span>{{ resources.length }} 项公开收藏 · 链接将在新标签页打开</span></header>
-    <p v-if="loading" role="status">正在整理资源…</p>
-    <div v-else-if="error" class="v2-state"><p class="error" role="alert">{{ error }}</p><button type="button" @click="loadResources">重新加载</button></div>
-    <p v-else-if="!resources.length" class="v2-state">暂时没有公开的资源。</p>
+    <header class="resource-hero"><p class="v2-eyebrow">COLLECT / SHARE / LEARN</p><h1>值得收藏的小工具与好资料。</h1><p>按用途整理，留下一点使用体会。愿这些收藏也能帮到你。</p><span v-if="!loading && !error">{{ resources.length }} 项公开收藏 · 链接将在新标签页打开</span><span v-else>收藏的网站、工具与学习资料</span></header>
+    <PageState v-if="loading" kind="loading" layout="cards" title="正在整理资源…" />
+    <PageState v-else-if="error" kind="error" title="资源暂时没能加载" :message="error" retry-label="重新加载" @retry="loadResources" />
+    <PageState v-else-if="!resources.length" title="资源收藏正在整理中" message="这里会收录用过的工具和学习资料。先去看看笔记吧。"><RouterLink class="v2-action" to="/">阅读记录 →</RouterLink></PageState>
     <template v-else>
       <div class="resource-controls"><nav aria-label="资源分组"><button type="button" :aria-pressed="selectedGroup === 'all'" @click="change({ group: undefined })">全部 {{ resources.length }}</button><button v-for="group in groups" :key="group.key" type="button" :aria-pressed="selectedGroup === group.key" @click="change({ group: group.key })">{{ group.name }} {{ group.count }}</button></nav><label>在当前分组中搜索<input v-model="search" type="search" maxlength="100" placeholder="名称、说明或推荐理由" /></label></div>
       <p class="v2-meta" role="status">找到 {{ visibleCount }} 项资源</p>
-      <div v-if="!visibleCount" class="v2-state"><h2>没有找到匹配资源</h2><p>试试其他关键词，或浏览全部收藏。</p><button type="button" @click="router.replace('/resources')">清空筛选</button></div>
+      <PageState v-if="!visibleCount" title="没有找到匹配资源" message="试试其他关键词，或浏览全部收藏。" retry-label="清空筛选" @retry="router.replace('/resources')" />
       <section v-for="group in visibleGroups" :key="group.key" class="resource-group"><header><h2>{{ group.name }}</h2><span>{{ group.items.length }} 项收藏</span></header><div class="resource-cards"><article v-for="item in group.items" :key="item.id" class="resource-entry"><div class="resource-entry-top"><span class="resource-icon"><ResourceIcon :name="item.iconKey" /></span><span class="resource-host">{{ item.host }}</span></div><h3>{{ item.title }}</h3><p>{{ item.description || '打开链接，了解更多。' }}</p><blockquote v-if="item.recommendation"><span>为什么推荐</span>{{ item.recommendation }}</blockquote><a v-if="item.href" :href="item.href" target="_blank" rel="noopener noreferrer">访问资源 <span aria-hidden="true">↗</span><span class="sr-only">（新标签页）</span></a><span v-else class="error">链接地址无效</span></article></div></section>
     </template>
   </section>

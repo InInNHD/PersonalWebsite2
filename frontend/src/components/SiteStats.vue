@@ -13,7 +13,7 @@ async function loadStats() {
   loading.value = true
   error.value = ''
   try {
-    const response = await fetch('/api/site-stats')
+    const response = await fetch('/api/site-stats', { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error('统计暂时无法加载')
     const data = await response.json()
     if (!disposed) stats.value = data

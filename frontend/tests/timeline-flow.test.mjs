@@ -19,7 +19,7 @@ function app(path,query,fetch){
   const update=async target=>{const old={...route};const path=target.path??route.path,query=nav.archiveQuery(target.query),hash=target.hash??'';const next={path,query,hash,fullPath:path+'?'+new URLSearchParams(query)+hash,matched:[{}]};nav.prepareList(next,old);current.value=next;await settle()}
   let state
   const router={push:update,replace:update}
-  const bindings={ref,computed,watch,useRoute:()=>route,useRouter:()=>router,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),onBeforeRouteLeave:()=>{},onBeforeRouteUpdate:()=>{},window:{scrollX:0,scrollY:0},fetch,...nav,finishList:async key=>{finished.push({key,directoryVisible:state?!state.directoryLoading.value:false});await nav.finishList(key)}}
+  const bindings={usePageMeta:()=>{},ref,computed,watch,useRoute:()=>route,useRouter:()=>router,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),onBeforeRouteLeave:()=>{},onBeforeRouteUpdate:()=>{},window:{scrollX:0,scrollY:0},fetch,...nav,finishList:async key=>{finished.push({key,directoryVisible:state?!state.directoryLoading.value:false});await nav.finishList(key)}}
   const script=parse(code('views/ArchiveView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
   scope.run(()=>{state=new Function(...Object.keys(bindings),script+';return {diary,months,selectedMonth,selected,yearGroups,publicTotal,directoryLoading,directoryError,articles,loading,error,page,total,totalPages,loadArchive,loadArticles,changePage,monthLocation,articleLocation}')(...Object.values(bindings))})
   return {...state,route,router,nav,finished,mount:()=>mounted[0](),leave:()=>{leaves.forEach(fn=>fn());scope.stop()}}

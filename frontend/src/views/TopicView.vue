@@ -1,4 +1,6 @@
 <script setup>
+import PageState from '../components/PageState.vue'
+import { usePageMeta } from '../pageMeta.js'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { finishList, listKey, rememberList, topicQuery } from '../listNavigation.js'
@@ -23,6 +25,7 @@ const selected = computed(() => {
   return items.find(item => String(item.id) === query.value.id) ?? null
 })
 const kindName = computed(() => query.value.kind === 'category' ? '分类' : '标签')
+usePageMeta(() => selected.value ? `${selected.value.name} · ${kindName.value}` : '内容地图', () => selected.value ? `浏览${selected.value.name}中的公开文章。` : '沿着分类与标签探索公开记录。')
 let latestRequestId = 0
 let latestDirectoryId = 0
 let disposed = false
@@ -56,7 +59,7 @@ async function loadArticles() {
   try {
     const params = new URLSearchParams({ page: String(page.value), size: '10' })
     params.set(query.value.kind === 'category' ? 'categoryId' : 'tagId', query.value.id)
-    const response = await fetch(`/api/articles?${params}`)
+    const response = await fetch(`/api/articles?${params}`, { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`请求失败：HTTP ${response.status}`)
     const data = await response.json()
     if (requestId !== latestRequestId || key !== listKey(route)) return
@@ -84,7 +87,7 @@ async function loadDirectory() {
   articles.value = []
   loading.value = false
   try {
-    const response = await fetch('/api/topics')
+    const response = await fetch('/api/topics', { signal: AbortSignal.timeout(15000) })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const data = await response.json()
     if (disposed || requestId !== latestDirectoryId) return
@@ -117,10 +120,8 @@ onMounted(loadDirectory)
       <p class="v2-eyebrow">EXPLORE / FIELD NOTES</p><h1>内容地图</h1>
       <p>沿着一个分类，或一枚标签，找到值得继续阅读的记录。</p>
     </header>
-    <div v-if="directoryLoading" class="v2-state" role="status">正在整理公开主题…</div>
-    <div v-else-if="directoryError" class="v2-state" role="alert">
-      <p>{{ directoryError }}</p><button type="button" @click="loadDirectory">重新加载主题</button>
-    </div>
+    <PageState v-if="directoryLoading" kind="loading" title="正在整理公开主题…" />
+    <PageState v-else-if="directoryError" kind="error" title="主题目录暂时没能加载" :message="directoryError" retry-label="重新加载主题" @retry="loadDirectory" />
     <template v-else-if="directory">
       <div class="topics-directory">
         <section aria-labelledby="topic-categories">
@@ -153,14 +154,12 @@ onMounted(loadDirectory)
           <RouterLink v-if="query.id" to="/topics">查看全部主题 →</RouterLink>
         </header>
         <p v-if="!query.id" class="topics-note">上方数量按公开文章统计；同一篇文章可以出现在多个标签中。</p>
-        <div v-else-if="!selected" class="v2-state">这个主题不存在，或暂时没有公开文章。可以选择其他主题。</div>
-        <div v-else-if="loading" class="v2-state" role="status">正在查找相关记录…</div>
-        <div v-else-if="error" class="v2-state" role="alert">
-          <p>{{ error }}</p><button type="button" @click="loadArticles">重新加载文章</button>
-        </div>
+        <PageState v-else-if="!selected" title="这个主题还没有公开记录" message="主题可能不存在，或暂时没有已发布文章。可以选择上方其他主题。" />
+        <PageState v-else-if="loading" kind="loading" layout="cards" title="正在查找相关记录…" />
+        <PageState v-else-if="error" kind="error" title="相关记录暂时没能加载" :message="error" retry-label="重新加载文章" @retry="loadArticles" />
         <template v-else>
           <p class="topics-note" role="status">{{ kindName }}「{{ selected.name }}」· 共 {{ total }} 篇公开文章</p>
-          <p v-if="!articles.length" class="v2-state">这个主题暂时没有公开文章。</p>
+          <PageState v-if="!articles.length" title="这个主题暂时没有公开文章" message="可以稍后再来，或浏览其他分类与标签。" />
           <div v-else class="v2-grid">
             <ArticleCard v-for="article in articles" :key="article.id" :article="article" :return-to="route.fullPath" />
           </div>

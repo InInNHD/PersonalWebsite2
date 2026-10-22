@@ -6,7 +6,7 @@ export function prepareReading(to, from) {
     if (to.path === from.path && from.matched?.length) return
     pending?.resolve()
     pending = null
-    if (to.path.startsWith('/articles/')) {
+    if (/^\/articles\/[^/]+\/?$/.test(to.path)) {
         let resolve
         const promise = new Promise(done => { resolve = done })
         pending = { path: to.path, promise, resolve }

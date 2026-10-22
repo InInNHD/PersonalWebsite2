@@ -20,9 +20,9 @@ function detail(fetch,headings={}){
   let serial=0
   const route={path:'/articles/1',params:{id:'1'},query:{from:'/?page=2'}}
   const window={innerHeight:900,scrollY:0,addEventListener:(type)=>events.push('add:'+type),removeEventListener:(type)=>events.push('remove:'+type),requestAnimationFrame:fn=>{frames.set(++serial,fn);return serial},cancelAnimationFrame:id=>frames.delete(id),matchMedia:()=>({matches:true}),scrollTo:options=>events.push(options)}
-  const bindings={ref,computed,nextTick,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),watch:()=>{},useRoute:()=>route,listReturn:()=>({path:'/'}),finishReading:async path=>{finished.push(path)},renderArticle,siteProfile:{nickname:'tester'},fetch,window,document:{getElementById:id=>headings[id]??null}}
+  const bindings={usePageMeta:()=>{},ref,computed,nextTick,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),watch:()=>{},useRoute:()=>route,listReturn:()=>({path:'/'}),finishReading:async path=>{finished.push(path)},renderArticle,siteProfile:{nickname:'tester'},fetch,window,document:{getElementById:id=>headings[id]??null}}
   const script=parse(code('views/ArticleDetailView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
-  const app=new Function(...Object.keys(bindings),`${script};return {loadArticle,article,contentHtml,error,loading,body,progress,activeId,showTop,rendered,updateReading,scheduleReading,backToTop}`)(...Object.values(bindings))
+  const app=new Function(...Object.keys(bindings),`${script};return {loadArticle,article,contentHtml,error,notFound,loading,body,progress,activeId,showTop,rendered,updateReading,scheduleReading,backToTop}`)(...Object.values(bindings))
   return {...app,window,route,finished,events,frames,mount:()=>mounted.forEach(fn=>fn()),leave:()=>leaves.forEach(fn=>fn())}
 }
 
@@ -110,4 +110,16 @@ test('阅读进度限制范围并更新目录，短文和监听清理正常',()=
   app.mount();app.scheduleReading();app.scheduleReading();assert.equal(app.frames.size,1)
   app.backToTop();assert.deepEqual(app.events.at(-1),{top:0,behavior:'auto'})
   app.leave();assert.equal(app.frames.size,0);assert.ok(app.events.includes('remove:scroll'));assert.ok(app.events.includes('remove:resize'))
+})
+test('旧404不能覆盖新正文，卸载后忽略404，非法编号不发送网络请求',async()=>{
+  const first=deferred(),second=deferred();let calls=0
+  const app=detail(()=>++calls===1?first.promise:second.promise)
+  const old=app.loadArticle('1'),latest=app.loadArticle('2')
+  second.resolve(response({id:2,title:'新正文',contentMarkdown:'内容'}));await latest
+  first.resolve(response({},404));await old
+  assert.equal(app.article.value.id,2);assert.equal(app.notFound.value,false);assert.equal(app.error.value,'')
+  const pending=deferred(),abandoned=detail(()=>pending.promise),loading=abandoned.loadArticle('1')
+  abandoned.leave();pending.resolve(response({},404));await loading;assert.equal(abandoned.notFound.value,false)
+  const invalid=detail(()=>{throw Error('不应请求网络')})
+  for(const id of ['0','abc','-1','9223372036854775808']){await invalid.loadArticle(id);assert.equal(invalid.notFound.value,true);assert.match(invalid.error.value,/不存在/)}
 })

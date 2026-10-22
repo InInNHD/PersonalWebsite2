@@ -23,6 +23,10 @@ function about(fetch,details=profile()){
 }
 async function html(state){
   const app=createSSRApp({setup:()=>state,template:parse(code('src/views/AboutView.vue')).descriptor.template.content})
+  // 实际PageState替代旧内联状态；继续验证真实空状态文案。
+  const descriptor=parse(code('src/components/PageState.vue')).descriptor
+  const script=descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
+  app.component('PageState',{props:{kind:{default:'empty'},title:String,message:String,retryLabel:String,heading:{default:'h2'},layout:{default:'lines'},compact:Boolean},setup:props=>new Function('computed','defineProps','defineEmits',script+';return {caption}')(computed,()=>props,()=>()=>{}),template:descriptor.template.content})
   app.component('ProfileAvatar',{template:'<span>f</span>'})
   app.component('ArticlePagination',{props:['page','totalPages'],template:'<nav>{{page}} / {{totalPages}}</nav>'})
   app.component('RouterLink',{props:['to'],template:'<a><slot /></a>'})

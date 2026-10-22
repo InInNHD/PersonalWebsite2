@@ -1,4 +1,6 @@
 <script setup>
+import PageState from '../components/PageState.vue'
+import { usePageMeta } from '../pageMeta.js'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { listReturn } from '../listNavigation.js'
@@ -15,12 +17,14 @@ const returnLocation = computed(() => listReturn(route.query.from))
 const article = ref(null)
 const loading = ref(false)
 const error = ref('')
+const notFound = ref(false)
 const body = ref(null)
 const coverFailed = ref(false)
 const progress = ref(0)
 const activeId = ref('')
 const showTop = ref(false)
 const types = { NOTE: '笔记', THOUGHT: '心得', DIARY: '日记' }
+usePageMeta(() => notFound.value ? '文章不存在' : article.value?.title || '文章阅读', () => article.value?.summary || '阅读公开笔记、心得与生活记录。', () => notFound.value)
 const rendered = computed(() => renderArticle(article.value?.contentMarkdown ?? ''))
 const contentHtml = computed(() => rendered.value.html)
 let latestRequestId = 0
@@ -71,14 +75,19 @@ async function loadArticle(id) {
   const path = route.path
   loading.value = true
   error.value = ''
+  notFound.value = false
   article.value = null
   coverFailed.value = false
   progress.value = 0
   activeId.value = ''
   showTop.value = false
   try {
-    const response = await fetch(`/api/articles/${encodeURIComponent(id)}`)
-    if (response.status === 404) throw new Error('文章不存在或尚未发布')
+    // 非法编号在客户端直接显示404，不向后端发送无意义请求。
+    if (!/^[1-9]\d{0,18}$/.test(String(id)) || BigInt(id) > 9223372036854775807n) { notFound.value = true; throw new Error('文章不存在或尚未发布') }
+    const response = await fetch(`/api/articles/${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(15000) })
+    // 404也属于页面状态；旧文章的404不能遮住已经打开的新文章。
+    if (requestId !== latestRequestId) return
+    if (response.status === 404) { notFound.value = true; throw new Error('文章不存在或尚未发布') }
     if (!response.ok) throw new Error(`请求失败：HTTP ${response.status}`)
     const data = await response.json()
     if (requestId !== latestRequestId) return
@@ -104,11 +113,9 @@ watch(() => route.params.id, loadArticle, { immediate: true })
 <template>
   <div class="reading-page">
     <RouterLink class="back-link" :to="returnLocation">← 返回文章列表</RouterLink>
-    <div v-if="loading" class="reading-state" role="status">正在打开这篇文章…</div>
-    <div v-else-if="error" class="reading-state" role="alert">
-      <h1>暂时无法阅读</h1><p>{{ error }}</p>
-      <button type="button" @click="loadArticle(route.params.id)">重新加载文章</button>
-    </div>
+    <PageState v-if="loading" kind="loading" heading="h1" layout="article" title="正在打开这篇文章…" />
+    <PageState v-else-if="notFound" kind="not-found" heading="h1" title="这篇记录暂时无法找到" message="文章可能尚未公开、已经撤回，或链接有误。可以返回列表浏览其他记录。" retry-label="重新检查文章" @retry="loadArticle(route.params.id)"><RouterLink class="v2-action" :to="returnLocation">返回文章列表 →</RouterLink></PageState>
+    <PageState v-else-if="error" kind="error" heading="h1" title="暂时无法阅读" :message="error" retry-label="重新加载文章" @retry="loadArticle(route.params.id)" />
     <template v-else-if="article">
       <div class="reading-progress" role="progressbar" aria-label="正文阅读进度"
            :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100">
