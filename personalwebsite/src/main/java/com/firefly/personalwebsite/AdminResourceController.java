@@ -37,7 +37,10 @@ public class AdminResourceController {
             @NotBlank @Size(max = 2048) String url,
             @NotNull @Size(max = 500) String description,
             @NotNull Boolean published,
-            @NotNull @Min(0) @Max(999999) Integer sortOrder
+            @NotNull @Min(0) @Max(999999) Integer sortOrder,
+            @jakarta.validation.constraints.Positive Long groupId,
+            @Size(max=20) @jakarta.validation.constraints.Pattern(regexp="link|code|book|tool|course") String iconKey,
+            @Size(max=300) String recommendation
     ) {}
 
     // 管理端需要知道公开状态和排序，因此比公开接口多返回两个字段。
@@ -47,7 +50,7 @@ public class AdminResourceController {
             String url,
             String description,
             boolean published,
-            int sortOrder
+            int sortOrder, Long groupId, String iconKey, String recommendation
     ) {}
 
     // 列表和保存后查询共用同一套字段映射。
@@ -59,7 +62,7 @@ public class AdminResourceController {
                 rs.getString("url"),
                 rs.getString("description"),
                 rs.getBoolean("published"),
-                rs.getInt("sort_order")
+                rs.getInt("sort_order"), rs.getObject("group_id",Long.class), rs.getString("icon_key"), rs.getString("recommendation")
         );
     }
 
@@ -67,7 +70,7 @@ public class AdminResourceController {
     public List<ResourceItem> list() {
         // 管理员能看到公开和隐藏的全部资源。
         String sql = """
-                SELECT id, title, url, description, published, sort_order
+                SELECT id, title, url, description, published, sort_order, group_id, icon_key, recommendation
                 FROM resource_link
                 ORDER BY sort_order ASC, id DESC
                 """;
@@ -82,11 +85,12 @@ public class AdminResourceController {
             @Valid @RequestBody ResourceRequest request
     ) {
         String url = validateUrl(request.url());
+        checkGroup(request.groupId());
 
         String sql = """
                 INSERT INTO resource_link
-                    (title, url, description, published, sort_order)
-                VALUES (?, ?, ?, ?, ?)
+                    (title, url, description, published, sort_order, group_id, icon_key, recommendation)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         var keyHolder = new GeneratedKeyHolder();
@@ -102,6 +106,9 @@ public class AdminResourceController {
             statement.setString(3, request.description().strip());
             statement.setBoolean(4, request.published());
             statement.setInt(5, request.sortOrder());
+            statement.setObject(6,request.groupId(),java.sql.Types.BIGINT);
+            statement.setString(7,request.iconKey()==null?"link":request.iconKey());
+            statement.setString(8,request.recommendation()==null?"":request.recommendation().strip());
 
             return statement;
         }, keyHolder);
@@ -123,11 +130,12 @@ public class AdminResourceController {
             @Valid @RequestBody ResourceRequest request
     ) {
         String url = validateUrl(request.url());
+        checkGroup(request.groupId());
 
         String sql = """
                 UPDATE resource_link
                 SET title = ?, url = ?, description = ?,
-                    published = ?, sort_order = ?
+                    published = ?, sort_order = ?, group_id = ?, icon_key = ?, recommendation = ?
                 WHERE id = ?
                 """;
 
@@ -137,7 +145,8 @@ public class AdminResourceController {
                 url,
                 request.description().strip(),
                 request.published(),
-                request.sortOrder(),
+                request.sortOrder(), request.groupId(), request.iconKey()==null?"link":request.iconKey(),
+                request.recommendation()==null?"":request.recommendation().strip(),
                 id
         );
 
@@ -148,7 +157,7 @@ public class AdminResourceController {
 
     private ResourceItem findById(long id) {
         String sql = """
-                SELECT id, title, url, description, published, sort_order
+                SELECT id, title, url, description, published, sort_order, group_id, icon_key, recommendation
                 FROM resource_link
                 WHERE id = ?
                 """;
@@ -165,6 +174,11 @@ public class AdminResourceController {
         return rows.get(0);
     }
 
+    private void checkGroup(Long id) {
+        if(id!=null && jdbcTemplate.queryForObject("SELECT COUNT(*) FROM resource_group WHERE id=?",Integer.class,id)==0)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"资源分组不存在");
+    }
+
     private String validateUrl(String input) {
         String value = input.strip();
 
@@ -176,7 +190,7 @@ public class AdminResourceController {
                             || "https".equalsIgnoreCase(uri.getScheme());
 
             // 必须是完整网址，不能只填写路径或 javascript: 等其他协议。
-            if (supportedScheme && uri.getHost() != null) {
+            if (supportedScheme && uri.getHost() != null && uri.getRawUserInfo()==null) {
                 return value;
             }
         } catch (IllegalArgumentException ignored) {

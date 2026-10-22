@@ -29,12 +29,14 @@ public class AdminArticleController {
 
     private final JdbcTemplate jdbcTemplate;
     private final ArticleTags articleTags;
+    private final MediaStore mediaStore;
 
     // Spring 会自动提供数据库操作对象和文章标签对象。
     public AdminArticleController(
-            JdbcTemplate jdbcTemplate, ArticleTags articleTags) {
+            JdbcTemplate jdbcTemplate, ArticleTags articleTags, MediaStore mediaStore) {
         this.jdbcTemplate = jdbcTemplate;
         this.articleTags = articleTags;
+        this.mediaStore = mediaStore;
     }
 
     //// 请求只包含文章内容，草稿状态和发布时间由后端决定。
@@ -60,7 +62,10 @@ public class AdminArticleController {
             // 封面可留空；后端仍需校验协议，不能只依赖浏览器的type="url"。
             @Size(max = 2048) String coverUrl,
             // 兼容旧请求：未传置顶字段时按false处理。
-            Boolean pinned
+            Boolean pinned,
+            // 由管理端Markdown解析器提取真实图片目标；这份列表明确授权媒体随文章公开。
+            @Size(max = 200)
+            List<@NotBlank @Size(max = 2048) String> bodyMediaUrls
     ) {}
 
     // 新建和发布都返回文章编号与当前状态。
@@ -114,6 +119,7 @@ public class AdminArticleController {
 
         // 保存刚创建的文章与所选标签之间的关联。
         articleTags.replace(id.longValue(), request.tagIds());
+        mediaStore.replaceReferences(id.longValue(), coverUrl, request.bodyMediaUrls());
         return new ArticleResult(id.longValue(), "DRAFT");
 
     }
@@ -301,6 +307,7 @@ public class AdminArticleController {
 
         // 标签无效时抛出异常，刚才的文章内容更新也会回滚。
         articleTags.replace(id, request.tagIds());
+        mediaStore.replaceReferences(id, coverUrl, request.bodyMediaUrls());
         return detail(id);
     }
 
@@ -309,6 +316,7 @@ public class AdminArticleController {
     private String validateCoverUrl(String input) {
         if (input == null || input.isBlank()) return null;
         String value = input.strip();
+        if (mediaStore.localFilename(value) != null) return value;
         try {
             URI uri = URI.create(value);
             boolean supported = "http".equalsIgnoreCase(uri.getScheme())
@@ -321,7 +329,7 @@ public class AdminArticleController {
             // 地址解析失败，按同一种输入错误返回。
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "封面必须为空或不含账号密码的完整HTTP/HTTPS地址");
+                "封面必须为空、本站上传图片地址或不含账号密码的完整HTTP/HTTPS地址");
     }
 
     private void checkCategory(Long categoryId) {

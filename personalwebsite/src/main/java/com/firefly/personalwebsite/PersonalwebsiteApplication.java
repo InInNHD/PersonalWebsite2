@@ -7,7 +7,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class PersonalwebsiteApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PersonalwebsiteApplication.class, args);
+        var application = new SpringApplication(PersonalwebsiteApplication.class);
+        application.setDefaultProperties(java.util.Map.of(
+                "spring.servlet.multipart.max-file-size", "5MB",
+                "spring.servlet.multipart.max-request-size", "6MB"));
+        application.run(args);
     }
 
 }

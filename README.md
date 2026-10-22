@@ -25,13 +25,15 @@
 
 第三轮[第14节3A阅读基础](docs/14-v2-article-reading.md)已完成实际验收：文章头部、正文布局、唯一章节锚点与目录、约计阅读时长、阅读进度和回顶均正常。实际前端23项及构建通过，浏览器长文/四档宽度/错误恢复/B2返回检查通过，真实个人库公开详情、草稿404及五表校验值复核通过，见[3A验收记录](docs/V2-READING-FOUNDATION-ACCEPTANCE.md)。[第15节3B](docs/15-v2-reading-media.md)也已完成实际验收：代码高亮、语言标签、复制反馈和正文图片查看正常；实际28项前端测试、构建、四档宽度和3A/B2回归通过，见[3B验收记录](docs/V2-READING-MEDIA-ACCEPTANCE.md)。[第16节3C](docs/16-v2-reading-neighbors.md)及第三轮本地功能验收也已通过：实际前端34项、隔离MySQL后端18项及两端构建通过；整轮目录/代码/图片/前后篇组合、错误恢复、四档宽度、原筛选及629px位置恢复正常，个人库3篇公开导航和草稿404核对通过，五表校验值未变化。见[第三轮验收记录](docs/V2-READING-NAVIGATION-ACCEPTANCE.md)。第三轮已纳入v0.8.0阶段性预发布；后续第四轮内容导航与个人展示。
 
-第四轮按4A分类/标签导航、4B归档与公开日记时间线、4C个人展示拆分。[第17节4A](docs/17-v2-topics.md)已完成实际验收：内容地图、公开计数、分类标签入口、主题分页与连续阅读返回正常；实际前端41项、隔离MySQL后端21项、两端构建、7组HTTP及四档宽度浏览器检查通过。个人库公开主题计数与数据库一致，五表校验值未变，业务代码无需修正，见[4A验收记录](docs/V2-TOPICS-ACCEPTANCE.md)。本节无迁移和新依赖，尚非第四轮新Release节点。[第18节4B](docs/18-v2-timeline.md)也已完成实际验收：前端46项、隔离MySQL后端24项、两端构建、7组HTTP及浏览器跨年/分页/连续阅读返回/错误重试/手机流程通过，个人库只读核对正常，见[4B验收记录](docs/V2-TIMELINE-ACCEPTANCE.md)。[第19节4C](docs/19-v2-profile-projects.md)及第四轮组合验收已于2026-10-21通过：实际前端54项、隔离MySQL后端24项、两端构建、7组HTTP和浏览器流程正常；6个公开项目及推送19条/Release17条/历史提交116条已生成本站快照。个人库零写入，五表校验值未变，详见[4C与整轮验收](docs/V2-PROFILE-ACCEPTANCE.md)。第四轮已纳入v0.9.0阶段性预发布，[发布说明](docs/RELEASE-v0.9.0.md)包含完整更新与验收范围。第五轮写作后台也已完成，下一阶段为第六轮资源与图片管理。
+第四轮按4A分类/标签导航、4B归档与公开日记时间线、4C个人展示拆分。[第17节4A](docs/17-v2-topics.md)已完成实际验收：内容地图、公开计数、分类标签入口、主题分页与连续阅读返回正常；实际前端41项、隔离MySQL后端21项、两端构建、7组HTTP及四档宽度浏览器检查通过。个人库公开主题计数与数据库一致，五表校验值未变，业务代码无需修正，见[4A验收记录](docs/V2-TOPICS-ACCEPTANCE.md)。本节无迁移和新依赖，尚非第四轮新Release节点。[第18节4B](docs/18-v2-timeline.md)也已完成实际验收：前端46项、隔离MySQL后端24项、两端构建、7组HTTP及浏览器跨年/分页/连续阅读返回/错误重试/手机流程通过，个人库只读核对正常，见[4B验收记录](docs/V2-TIMELINE-ACCEPTANCE.md)。[第19节4C](docs/19-v2-profile-projects.md)及第四轮组合验收已于2026-10-21通过：实际前端54项、隔离MySQL后端24项、两端构建、7组HTTP和浏览器流程正常；6个公开项目及推送19条/Release17条/历史提交116条已生成本站快照。个人库零写入，五表校验值未变，详见[4C与整轮验收](docs/V2-PROFILE-ACCEPTANCE.md)。第四轮已纳入v0.9.0阶段性预发布，[发布说明](docs/RELEASE-v0.9.0.md)包含完整更新与验收范围。第五轮写作后台也已完成，第六轮资源与图片管理也已完成，下一阶段为第七轮完整状态与内容打磨。
 
 归档页为 `/archive`，独立公开日记页为 `/diary`；公开接口 `/api/articles/archive` 返回月份及文章数，可选 `type=DIARY` 只统计公开日记。列表接口复用 `month=YYYY-MM`、`type=DIARY` 和分页参数。两页网址保存月份/页码，正文及连续阅读保留来源与返回位置；只包含已发布文章，以首次发布时间归属年月。
 
 公开文章列表 `/api/articles` 现在返回分页对象：`items`、`total`、`page`、`size`、`totalPages`；默认第一页、每页 10 篇。升级时需同步前后端，旧数组解析方式不再适用。公开详情格式不变；第五轮管理员文章列表也已改为分页对象，后台详情新增 `deletedAt`，需同步升级前后端。
 
 第五轮5A/5B/5C已按用户授权直接实现并完成统一验收：独立登录与后台布局、组合筛选和服务端分页、Markdown编辑器、分类标签站内表单、撤回/软回收/恢复、未保存保护及原页重新验证。实际前端60项、隔离真实MySQL后端28项及两端构建通过，完整浏览器流程和四档宽度检查通过；个人库备份后已执行006，原有数据逐字段一致。见[使用及升级说明](docs/21-v2-admin-workflow.md)与[统一验收记录](docs/V2-ADMIN-WORKFLOW-ACCEPTANCE.md)。当前达到[v0.10.0预发布候选节点](docs/RELEASE-v0.10.0.md)，尚未提交或发布；第20节为历史5A指南，不再用于覆盖新后台。
+
+第六轮已完成并验收：资源分组/组内搜索、本站SVG图标和推荐理由、后台分组排序、本地PNG/JPEG图片库、封面/正文插入、媒体公开隔离，以及数据库＋配置＋媒体备份恢复。实际前端67项、独立真实MySQL后端32项、两端构建、四档宽度和恢复演练通过。个人库已备份后完成007，原五表原字段和行数据一致。见[使用及升级说明](docs/22-v2-resources-media.md)、[统一验收记录](docs/V2-RESOURCES-MEDIA-ACCEPTANCE.md)。当前为[v0.11.0预发布候选](docs/RELEASE-v0.11.0.md)，尚未提交或发布。
 
 ## GitHub公开项目资料同步
 
@@ -62,6 +64,7 @@ node frontend/scripts/sync-github.mjs
 | 5 | `database/004-article-tag.sql` | 创建文章与标签的关联表 |
 | 6 | `database/005-article-presentation.sql` | 新增封面地址、置顶与更新时间 |
 | 7 | `database/006-article-recycle.sql` | 新增文章回收时间及可见性索引 |
+| 8 | `database/007-resources-media.sql` | 资源分组/图标/推荐理由，媒体及文章关联表 |
 
 使用 MySQL 命令行时，在 PowerShell 运行：
 
@@ -80,22 +83,24 @@ SOURCE E:/PersonalWebsite2/database/004-article-tag.sql;
 USE personal_website;
 SOURCE E:/PersonalWebsite2/database/005-article-presentation.sql;
 SOURCE E:/PersonalWebsite2/database/006-article-recycle.sql;
+SOURCE E:/PersonalWebsite2/database/007-resources-media.sql;
 SHOW TABLES;
 ```
 
-结果应包含 `article`、`resource_link`、`category`、`tag`、`article_tag` 五张表。也可用 IDEA 数据库工具或其他 MySQL 客户端，按表格顺序打开并执行脚本。初始化账号需要建库、建表、建索引和外键权限；应用账号需要访问这些表的读写权限。
+结果应包含 `article`、`resource_link`、`category`、`tag`、`article_tag`、`resource_group`、`media_asset`、`article_media` 八张表。也可用 IDEA 数据库工具或其他 MySQL 客户端，按表格顺序打开并执行脚本。初始化账号需要建库、建表、建索引和外键权限；应用账号需要访问这些表的读写权限。图片目录需要当前Java进程具备读写权限，不能在Web服务器中直接公开为静态目录。
 
-脚本默认数据库名为 `personal_website`。使用其他库名时，统一替换脚本中的库名，执行005、006前确认选中目标库，再将 `DB_URL` 指向该库。
+脚本默认数据库名为 `personal_website`。使用其他库名时，统一替换脚本中的库名，执行005～007前确认选中目标库，再将 `DB_URL` 指向该库。
 
 ## 已有数据库：升级
 
 先备份数据库，并确认当前表结构，再执行尚未应用的脚本。脚本属于一次性迁移，不能重复执行；任何一步报错都应先处理，再继续。
 
-- 从 `v0.1.0` 升级：已有初始文章表，依次执行 `001`～`006`；如果部分脚本已经应用，跳过对应项。
-- 从 `v0.2.0` 升级：已有文章、资源、分类表，依次执行 `003`、`004`、`005`、`006`。
-- 从 `v0.3.0`～`v0.6.0` 升级到当前第二版源码：备份后依次执行 `005-article-presentation.sql`、`006-article-recycle.sql`，再同步更新并重启前后端。
-- 从 `v0.7.0`～`v0.9.0` 升级：备份后执行一次 `006-article-recycle.sql`。
-- 本工作区个人库已完成005和006：跳过已执行脚本。可用 `SHOW COLUMNS FROM article` 核对 `cover_url`、`pinned`、`updated_at`、`deleted_at`。2026-10-21迁移前备份在 `backups/20261021-fifth-round-194842`；原有五表行数据逐字段一致。
+- 从 `v0.1.0` 升级：已有初始文章表，依次执行 `001`～`007`；如果部分脚本已经应用，跳过对应项。
+- 从 `v0.2.0` 升级：已有文章、资源、分类表，依次执行 `003`、`004`、`005`、`006`、`007`。
+- 从 `v0.3.0`～`v0.6.0` 升级到当前第二版源码：备份后依次执行 `005-article-presentation.sql`、`006-article-recycle.sql`、`007-resources-media.sql`，再同步更新并重启前后端。
+- 从 `v0.7.0`～`v0.9.0` 升级：备份后依次执行一次 `006-article-recycle.sql`、`007-resources-media.sql`。
+- 从 `v0.10.0` 升级：备份后执行一次 `007-resources-media.sql`，同步更新前后端。
+- 本工作区个人库已完成005、006和007：跳过已执行脚本。可用 `SHOW COLUMNS FROM article` 核对 `cover_url`、`pinned`、`updated_at`、`deleted_at`。第六轮迁移前备份在 `backups/20261021-sixth-round-personal-233702`；原有五表原字段和行数据逐字段一致。
 
 已有数据库升级时跳过 `000-init-article.sql`。分类升级后，已有文章的 `category_id` 为 `NULL`，页面显示“未分类”；标签升级不会修改现有文章，没有关联记录的文章显示为无标签。
 
@@ -146,7 +151,7 @@ node --test tests/*.test.mjs
 npm.cmd run build
 ```
 
-后端测试必须使用独立的真实MySQL库，先在专用库应用000～006并配置Java17与本地环境变量；不要对个人内容库执行写入测试。新增 `AdminWorkflowTests` 会强制校验库名前缀为 `pw_v2admin_acceptance_`，因此直接使用个人库运行test/package会被拒绝。
+后端测试必须使用独立的真实MySQL库，先在专用库应用000～007并配置Java17与本地环境变量；不要对个人内容库执行写入测试。`AdminWorkflowTests` 和 `ResourceMediaFlowTests` 会强制校验库名前缀为 `pw_v2admin_acceptance_`，因此直接使用个人库运行test/package会被拒绝。
 
 ```powershell
 cd E:\PersonalWebsite2\personalwebsite
@@ -155,10 +160,12 @@ cd E:\PersonalWebsite2\personalwebsite
 .\mvnw.cmd package
 ```
 
-导航、主题、归档日记共9项专项位于 `docs/checks/ArticleNavigationGuideTests.java`、`TopicGuideTests.java` 和 `TimelineGuideTests.java`，在适配专用库名前缀的隔离副本中执行；上述Maven命令运行 `personalwebsite/src/test` 内的19项测试。本轮28项包含19项实际测试与这9项专项，范围见 `docs/V2-ADMIN-WORKFLOW-ACCEPTANCE.md`。
+导航、主题、归档日记共9项专项位于 `docs/checks/ArticleNavigationGuideTests.java`、`TopicGuideTests.java` 和 `TimelineGuideTests.java`，在适配专用库名前缀的隔离副本中执行；上述Maven命令运行 `personalwebsite/src/test` 内的23项测试。本轮32项包含23项实际测试与这9项专项，范围见 `docs/V2-RESOURCES-MEDIA-ACCEPTANCE.md`。
 
 测试写入通过事务回滚，但MySQL自增编号仍可能前进。测试中的固定密码仅属于隔离测试上下文，不是实际管理员密码。
 
-最新 `v0.10.0` 预发布包含独立后台、文章筛选分页、Markdown编辑、撤回、回收及恢复，完整说明见 `docs/RELEASE-v0.10.0.md`；此前版本见 `docs/RELEASE-v0.9.0.md`。从v0.9.0升级必须先备份并执行尚未应用的006，再同步更新前后端；本机个人库已完成006，不要重复执行，只需重启后端。Release提供源码下载，运行时仍需自行准备环境、数据库及本地配置。
+最新 `v0.11.0` 预发布包含资源分组与搜索、推荐说明、本地图片上传和封面/正文关联、媒体备份恢复，完整说明见 `docs/RELEASE-v0.11.0.md`；此前版本见 `docs/RELEASE-v0.10.0.md`。从v0.10.0升级需先备份并执行尚未应用的007；本机个人库已完成006和007，不要重复执行，只需重启前后端。Release提供源码，不包含个人数据库、配置、备份或上传图片，运行及恢复时需自行准备匹配的数据和媒体目录。
 
-第五轮已纳入本轮阶段性预发布。下一轮为资源与图片管理，云部署仍后置。
+第五轮已纳入v0.10.0预发布。第六轮已纳入本轮v0.11.0阶段性预发布；下一轮完整状态与内容打磨，云部署仍后置。
+
+本地图片通过 `/api` 同源代理。`app.media.directory` 默认相对Java工作目录，建议按[第22节](docs/22-v2-resources-media.md)设置绝对路径；备份必须同时包含该媒体目录。备份脚本为 `scripts/local-backup.py`，Windows建议Python3.12+，示例及隔离恢复流程见第22节。文章保存请求新增 `bodyMediaUrls` 显式授权列表，当前前端自动生成，其他客户端也需同步适配本站媒体。

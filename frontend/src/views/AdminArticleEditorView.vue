@@ -5,18 +5,44 @@ import MarkdownIt from 'markdown-it'
 import { adminRequest, adminTarget, notifyAdmin } from '../adminSession.js'
 import { useAdminLeave } from '../useAdminLeave.js'
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue'
+import AdminMediaPanel from '../components/AdminMediaPanel.vue'
 const route = useRoute(), router = useRouter()
 function emptyArticle() { return { id: null, title: '', summary: '', contentMarkdown: '', type: 'NOTE', status: 'DRAFT', categoryId: null, tagIds: [], coverUrl: '', pinned: false, deletedAt: null } }
 const form = reactive(emptyArticle()), categories = ref([]), tags = ref([])
 const busy = ref(false), loading = ref(false), ready = ref(false), error = ref(''), savedSnapshot = ref('')
+const imageBusy = ref(false), imagePreviews = ref({})
+const localImages = computed(() => [...new Set([form.coverUrl, ...bodyMediaUrls.value].map(localMediaBase).filter(Boolean))])
 const mode = ref('split'), textarea = ref(null), action = ref('')
-const payload = () => ({ title: form.title, summary: form.summary, contentMarkdown: form.contentMarkdown, type: form.type, categoryId: form.categoryId, tagIds: [...form.tagIds], coverUrl: form.coverUrl.trim() || null, pinned: form.pinned })
+const payload = () => ({ title: form.title, summary: form.summary, contentMarkdown: form.contentMarkdown, type: form.type, categoryId: form.categoryId, tagIds: [...form.tagIds], coverUrl: form.coverUrl.trim() || null, pinned: form.pinned, bodyMediaUrls: bodyMediaUrls.value })
 const dirty = computed(() => ready.value && !form.deletedAt && JSON.stringify(payload()) !== savedSnapshot.value)
-const leavingBusy = computed(() => busy.value || loading.value)
+const leavingBusy = computed(() => busy.value || loading.value || imageBusy.value)
 const { discardOpen, askDiscard, resolveDiscard, navigateSaved } = useAdminLeave(dirty, leavingBusy)
 const backTarget = computed(() => { const value = adminTarget(route.query.from); return value.startsWith('/admin/articles?') || value === '/admin/articles' ? value : '/admin/articles' })
 const markdown = new MarkdownIt({ html: false, linkify: true })
+function localMediaBase(url) { return /^\/api\/media\/[0-9a-f-]{36}\.(?:png|jpg)(?:[?#]|$)/.test(url ?? '') ? url.split(/[?#]/)[0] : null }
+const bodyMediaUrls = computed(() => {
+  const urls = new Set()
+  function visit(tokens) {
+    for (const token of tokens) {
+      if (token.type === 'image' || token.type === 'link_open') { const url = token.attrGet(token.type === 'image' ? 'src' : 'href'); if (localMediaBase(url)) urls.add(url) }
+      else if (token.children) visit(token.children)
+    }
+  }
+  visit(markdown.parse(form.contentMarkdown, {}))
+  return [...urls]
+})
+const defaultImage = markdown.renderer.rules.image
+markdown.renderer.rules.image = (tokens, index, options, environment, renderer) => {
+  const token = tokens[index], url = token.attrGet('src')
+  const replacement = imagePreviews.value[localMediaBase(url)]
+  if (replacement) token.attrSet('src', replacement)
+  return defaultImage(tokens, index, options, environment, renderer)
+}
 const preview = computed(() => markdown.render(form.contentMarkdown))
+async function chooseMedia(item) {
+  if (item.role === 'COVER') form.coverUrl = item.url
+  else await insertMarkdown('![', '](' + item.url + ')\n', '图片说明')
+}
 let latestRequestId = 0
 onBeforeUnmount(() => { latestRequestId += 1 })
 function fillForm(article) {
@@ -46,7 +72,7 @@ async function persist() {
   if (isNew) await navigateSaved(() => router.replace({ path: `/admin/articles/${result.id}/edit`, query: { from: backTarget.value } }))
 }
 async function save(publish = false) {
-  if (busy.value || loading.value || !ready.value || form.deletedAt) return
+  if (busy.value || loading.value || imageBusy.value || !ready.value || form.deletedAt) return
   busy.value = true; error.value = ''; notifyAdmin('')
   let persisted = false
   try {
@@ -90,7 +116,7 @@ watch(() => route.params.id, loadDocument, { immediate: true })
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <button v-if="!ready && !loading" type="button" @click="retryLoad">重新加载文章</button>
     <div v-if="ready && form.deletedAt" class="v2-state">这篇文章已回收，请到回收站恢复为草稿后再编辑。<RouterLink to="/admin/articles?recycled=true">打开回收站 →</RouterLink></div>
-    <form v-else-if="ready" @submit.prevent="save(false)"><fieldset :disabled="busy || loading">
+    <form v-else-if="ready" @submit.prevent="save(false)"><fieldset :disabled="busy || loading || imageBusy">
       <p v-if="form.status === 'PUBLISHED'" class="studio-warning">这篇文章已经公开，保存会立即更新访客看到的内容。需要停止公开时可先撤回。</p>
       <label>标题<input v-model="form.title" maxlength="200" required class="studio-title-input" /></label>
       <div class="studio-editor-meta"><label>栏目<select v-model="form.type"><option value="NOTE">笔记</option><option value="THOUGHT">心得</option><option value="DIARY">日记</option></select></label><label>分类<select v-model="form.categoryId"><option :value="null">未分类</option><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option></select></label></div>
@@ -98,7 +124,9 @@ watch(() => route.params.id, loadDocument, { immediate: true })
       <div class="studio-tabs" role="group" aria-label="编辑模式"><button v-for="item in [['edit','编辑'],['preview','预览'],['split','分屏']]" :key="item[0]" type="button" :aria-pressed="mode === item[0]" @click="mode = item[0]">{{ item[1] }}</button></div>
       <div v-show="mode !== 'preview'" class="studio-markdown-toolbar" role="toolbar" aria-label="Markdown工具栏"><button type="button" @click="insertMarkdown('## ', '', '标题')">二级标题</button><button type="button" @click="insertMarkdown('**', '**')">粗体</button><button type="button" @click="insertMarkdown('*', '*')">斜体</button><button type="button" @click="insertMarkdown('`', '`', 'code')">行内代码</button><button type="button" @click="insertMarkdown('\n```text\n', '\n```\n', '代码')">代码块</button><button type="button" @click="insertMarkdown('[', '](https://example.com)', '链接文字')">链接</button><button type="button" @click="insertMarkdown('- ', '', '列表项')">列表</button></div>
       <div class="studio-writing" :class="{ split: mode === 'split' }"><label v-show="mode !== 'preview'">Markdown 正文<textarea ref="textarea" v-model="form.contentMarkdown" rows="22" :required="mode !== 'preview'"></textarea></label><section v-if="mode !== 'edit'" class="studio-preview" aria-label="正文预览"><p class="studio-eyebrow">PREVIEW</p><div class="markdown-body" v-html="preview"></div></section></div>
-      <div class="studio-editor-options"><label>封面地址（可选）<input v-model="form.coverUrl" type="url" maxlength="2048" placeholder="https://example.com/cover.jpg" /></label><label class="studio-checkbox"><input v-model="form.pinned" type="checkbox" />置顶这篇文章</label></div>
+      <div class="studio-editor-options"><label>封面地址（可选）<input v-model="form.coverUrl" type="text" maxlength="2048" placeholder="https://example.com/cover.jpg" /></label><label class="studio-checkbox"><input v-model="form.pinned" type="checkbox" />置顶这篇文章</label></div>
+      <img v-if="imagePreviews[localMediaBase(form.coverUrl)]" class="studio-cover-preview" :src="imagePreviews[localMediaBase(form.coverUrl)]" alt="当前封面预览" />
+      <AdminMediaPanel :references="localImages" @choose="chooseMedia" @previews="imagePreviews = $event" @busy="imageBusy = $event" />
       <div role="group" aria-label="文章标签" class="studio-tag-picker"><p>文章标签（最多20个）</p><label v-for="tag in tags" :key="tag.id" class="studio-checkbox"><input v-model="form.tagIds" type="checkbox" :value="tag.id" :disabled="form.tagIds.length >= 20 && !form.tagIds.includes(tag.id)" />{{ tag.name }}</label><p v-if="!tags.length">暂无标签，可到分类与标签页面创建。</p></div>
       <div class="studio-editor-actions"><button type="submit">{{ form.status === 'PUBLISHED' ? '保存公开修改' : '保存草稿' }}</button><button v-if="form.status !== 'PUBLISHED'" type="button" @click="action = 'publish'">保存并发布</button><button v-if="form.status === 'PUBLISHED'" type="button" @click="action = 'unpublish'">撤回公开</button><button v-if="form.id" type="button" @click="action = 'recycle'">移到回收站</button><span>{{ form.contentMarkdown.length }} 字符</span></div>
     </fieldset></form>

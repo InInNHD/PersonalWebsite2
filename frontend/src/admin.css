@@ -122,3 +122,18 @@
   .studio-title-input { font-size:20px; }
   .studio-content label.studio-checkbox { font-size:14px; }
 }
+
+/* 第六轮：本地图片库和资源分组。 */
+.studio-media { padding:22px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); margin:24px 0; }
+.studio-media > p { color:var(--color-muted); font-size:13px; line-height:1.9; }
+.studio-media-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; list-style:none; padding:0; }
+.studio-media-grid li { min-width:0; padding:12px; border:1px solid var(--color-border); border-radius:10px; }
+.studio-media-grid img, .studio-media-placeholder { width:100%; height:130px; object-fit:contain; background:var(--color-surface-raised); border-radius:6px; }
+.studio-media-grid small { display:block; margin:10px 0; color:var(--color-muted); }
+.studio-media-grid li > div, .studio-media nav { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.studio-media-grid button { font-size:12px; padding:6px 10px; }
+.studio-cover-preview { max-width:280px; max-height:160px; object-fit:contain; }
+.studio-group-settings { margin-top:28px; }
+.studio-group-settings form { max-width:500px; }
+@media(max-width:800px) { .studio-media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:420px) { .studio-media { padding:14px; } .studio-media-grid { grid-template-columns:minmax(0,1fr); } }

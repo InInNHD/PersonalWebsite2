@@ -17,3 +17,8 @@
 **/application-local.properties
 **/application-local.yml
 **/application-local.yaml
+
+# Local uploaded images, backed up separately from source
+/personalwebsite/media/
+/media/
+__pycache__/

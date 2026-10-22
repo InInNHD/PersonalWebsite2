@@ -27,7 +27,8 @@ export async function adminRequest(path, options = {}) {
   const headers = new Headers(options.headers)
   headers.set('Authorization', authorization)
   headers.set('X-Requested-With', 'XMLHttpRequest') // 失败由页面提示，避免原生Basic弹窗。
-  if (options.body) headers.set('Content-Type', 'application/json')
+  // FormData的boundary由浏览器生成，不能手动覆盖Content-Type。
+  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const csrf = await adminRequest('/csrf') // 每次写入重新取当前会话token。
     headers.set(csrf.headerName, csrf.token)
@@ -38,15 +39,16 @@ export async function adminRequest(path, options = {}) {
   if (!response.ok) {
     if (response.status === 401) clearAdminSession()
     const descriptions = {
-      400: '输入校验失败，请检查必填项、长度、链接格式和排序范围。',
+      400: path.startsWith('/media') ? '图片校验失败：请使用有效PNG/JPEG，大小不超过5MiB，边长不超过6000px且总像素不超过2000万。' : '输入校验失败，请检查必填项、长度、链接格式和排序范围。',
       401: '管理员认证失败，当前输入仍保留；请核对密码后重新登录。',
       403: '安全校验失败，请重试；若仍失败，请检查后端日志。',
       404: '记录不存在，请刷新列表。',
-      409: path.startsWith('/tags') ? '标签名称已存在，请换一个名称。' : path.startsWith('/categories') ? '分类名称已存在，请换一个名称。' : '文章已被回收，请刷新列表并先恢复为草稿。',
+      413: '图片过大，请选择不超过5MiB的PNG或JPEG图片。',
+      409: path.startsWith('/resource-groups') ? '资源分组名称已存在，请换一个名称。' : path.startsWith('/tags') ? '标签名称已存在，请换一个名称。' : path.startsWith('/categories') ? '分类名称已存在，请换一个名称。' : '文章已被回收，请刷新列表并先恢复为草稿。',
     }
     throw new Error(descriptions[response.status] ?? `请求失败：HTTP ${response.status}`)
   }
-  const data = response.status === 204 ? null : await response.json()
+  const data = response.status === 204 ? null : options.responseType === 'blob' ? await response.blob() : await response.json()
   if (version !== generation) throw new Error('登录状态已变化，请重新操作。')
   return data
 }

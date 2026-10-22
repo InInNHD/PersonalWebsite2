@@ -4,3 +4,8 @@ spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 # 管理员密码从环境变量读取，不在仓库中保存真实密码。
 app.admin.password=${ADMIN_PASSWORD}
+
+# 本地媒体目录位于后端工作目录的media/；可用绝对路径覆盖，备份时一并保存。
+app.media.directory=${MEDIA_DIRECTORY:./media}
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=6MB

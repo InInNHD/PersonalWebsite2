@@ -25,16 +25,17 @@ public class ResourceController {
             long id,
             String title,
             String url,
-            String description
+            String description, Long groupId, String groupName, int groupSortOrder, String iconKey, String recommendation
     ) {}
 
     @GetMapping
     public List<ResourceSummary> list() {
         String sql = """
-                SELECT id, title, url, description
-                FROM resource_link
-                WHERE published = TRUE
-                ORDER BY sort_order ASC, id DESC
+                SELECT r.id,r.title,r.url,r.description,r.group_id,g.name group_name,
+                    COALESCE(g.sort_order,999999) group_sort_order,r.icon_key,r.recommendation
+                FROM resource_link r LEFT JOIN resource_group g ON g.id=r.group_id
+                WHERE r.published = TRUE
+                ORDER BY (r.group_id IS NULL),g.sort_order ASC,g.id ASC,r.sort_order ASC,r.id DESC
                 """;
 
         // 每行数据库记录转换为一个 ResourceSummary。
@@ -43,7 +44,7 @@ public class ResourceController {
                         rs.getLong("id"),
                         rs.getString("title"),
                         rs.getString("url"),
-                        rs.getString("description")
+                        rs.getString("description"),rs.getObject("group_id",Long.class),rs.getString("group_name"),rs.getInt("group_sort_order"),rs.getString("icon_key"),rs.getString("recommendation")
                 )
         );
     }
