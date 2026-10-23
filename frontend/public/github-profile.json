@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "owner": "InInNHD",
-  "syncedAt": "2026-10-20T16:57:36.828Z",
+  "syncedAt": "2026-10-23T00:55:32.279Z",
   "projects": [
     {
       "id": "1394822311",
@@ -13,7 +13,19 @@
       "fork": false,
       "archived": false,
       "createdAt": "2026-09-29T09:25:23Z",
-      "pushedAt": "2026-10-19T02:39:48Z"
+      "pushedAt": "2026-10-22T01:54:57Z"
+    },
+    {
+      "id": "1427987330",
+      "fullName": "InInNHD/floating-ui",
+      "name": "floating-ui",
+      "description": "A JavaScript library to position floating elements and create interactions for them.",
+      "url": "https://github.com/InInNHD/floating-ui",
+      "language": "",
+      "fork": true,
+      "archived": false,
+      "createdAt": "2026-10-21T06:46:54Z",
+      "pushedAt": "2026-10-21T14:21:09Z"
     },
     {
       "id": "1403013902",
@@ -78,6 +90,162 @@
   ],
   "events": [
     {
+      "id": "release:420229760",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-22T01:55:23Z",
+      "title": "v0.12.0 — 页面状态、元信息与键盘体验",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.12.0"
+    },
+    {
+      "id": "push:24765438351",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-22T01:54:53Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/372d7e7effa3a8d938b3b33be5c35fc9042cfc58...8644c7049583def41eef501758fa5ce71c168e7f"
+    },
+    {
+      "id": "commit:1394822311:8644c7049583def41eef501758fa5ce71c168e7f",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-22T01:54:46Z",
+      "title": "feat: 统一页面状态元信息与键盘体验",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/8644c7049583def41eef501758fa5ce71c168e7f"
+    },
+    {
+      "id": "release:420207757",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-22T01:12:53Z",
+      "title": "v0.11.0 — 资源分组与本地图片管理",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.11.0"
+    },
+    {
+      "id": "push:24779200452",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-22T01:12:27Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/6a714fddcd9d5033c4e54754277ed2c2102495f6...372d7e7effa3a8d938b3b33be5c35fc9042cfc58"
+    },
+    {
+      "id": "commit:1394822311:372d7e7effa3a8d938b3b33be5c35fc9042cfc58",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-22T01:12:19Z",
+      "title": "feat: 完成资源分组本地图片管理与媒体备份恢复",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/372d7e7effa3a8d938b3b33be5c35fc9042cfc58"
+    },
+    {
+      "id": "release:419653990",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-21T14:23:13Z",
+      "title": "v0.10.0 — 独立后台与完整写作流程",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.10.0"
+    },
+    {
+      "id": "push:24821346635",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-21T14:22:38Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/928a0105f937c1e27716091b7b2fe3e4f7ed66e6...6a714fddcd9d5033c4e54754277ed2c2102495f6"
+    },
+    {
+      "id": "commit:1394822311:6a714fddcd9d5033c4e54754277ed2c2102495f6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-21T14:22:30Z",
+      "title": "feat: 完成独立后台与文章写作回收恢复流程",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/6a714fddcd9d5033c4e54754277ed2c2102495f6"
+    },
+    {
+      "id": "commit:1427987330:2dcca48b096e1df131c89e76cf8d33aeb22937fa",
+      "kind": "COMMIT",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T13:12:04Z",
+      "title": "ci: verify Windows Edge on a clean runner",
+      "url": "https://github.com/InInNHD/floating-ui/commit/2dcca48b096e1df131c89e76cf8d33aeb22937fa"
+    },
+    {
+      "id": "commit:1427987330:13ef1b3d9484c44bb88a0dddf85a5246ae0d171d",
+      "kind": "COMMIT",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T13:09:06Z",
+      "title": "ci: run macOS Intel follow-up only",
+      "url": "https://github.com/InInNHD/floating-ui/commit/13ef1b3d9484c44bb88a0dddf85a5246ae0d171d"
+    },
+    {
+      "id": "push:24808433246",
+      "kind": "PUSH",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T13:00:04Z",
+      "title": "推送到 codex/qa-3525-platforms",
+      "url": "https://github.com/InInNHD/floating-ui/compare/c4f617a66820cc4e11c777ec2c7e643d52e651b8...e6b17c0d59197ce8f59d6bdd3fdacc90aa2f8954"
+    },
+    {
+      "id": "commit:1427987330:e6b17c0d59197ce8f59d6bdd3fdacc90aa2f8954",
+      "kind": "COMMIT",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T12:59:56Z",
+      "title": "ci: verify macOS Chrome in headed mode as well",
+      "url": "https://github.com/InInNHD/floating-ui/commit/e6b17c0d59197ce8f59d6bdd3fdacc90aa2f8954"
+    },
+    {
+      "id": "push:24802155140",
+      "kind": "PUSH",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T11:55:58Z",
+      "title": "推送到 codex/qa-3525-platforms",
+      "url": "https://github.com/InInNHD/floating-ui/compare/5cd61418a4fb31348a2cf9ad5ed37f2004320146...c4f617a66820cc4e11c777ec2c7e643d52e651b8"
+    },
+    {
+      "id": "commit:1427987330:c4f617a66820cc4e11c777ec2c7e643d52e651b8",
+      "kind": "COMMIT",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T11:55:50Z",
+      "title": "ci: recognize colored Vite startup output",
+      "url": "https://github.com/InInNHD/floating-ui/commit/c4f617a66820cc4e11c777ec2c7e643d52e651b8"
+    },
+    {
+      "id": "commit:1427987330:5cd61418a4fb31348a2cf9ad5ed37f2004320146",
+      "kind": "COMMIT",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T11:49:13Z",
+      "title": "ci: verify issue 3525 across desktop platforms",
+      "url": "https://github.com/InInNHD/floating-ui/commit/5cd61418a4fb31348a2cf9ad5ed37f2004320146"
+    },
+    {
+      "id": "commit:1427987330:186105a620699417509287d5c902d236222d325f",
+      "kind": "COMMIT",
+      "repo": "InInNHD/floating-ui",
+      "date": "2026-10-21T07:23:28Z",
+      "title": "test(react): cover virtual select reopening",
+      "url": "https://github.com/InInNHD/floating-ui/commit/186105a620699417509287d5c902d236222d325f"
+    },
+    {
+      "id": "release:419038601",
+      "kind": "RELEASE",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-21T01:11:26Z",
+      "title": "v0.9.0 — 内容导航、公开日记与GitHub项目展示",
+      "prerelease": true,
+      "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.9.0"
+    },
+    {
+      "id": "commit:1394822311:928a0105f937c1e27716091b7b2fe3e4f7ed66e6",
+      "kind": "COMMIT",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-21T01:10:54Z",
+      "title": "feat: 完成内容导航公开日记与GitHub项目展示",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/commit/928a0105f937c1e27716091b7b2fe3e4f7ed66e6"
+    },
+    {
       "id": "release:416851245",
       "kind": "RELEASE",
       "repo": "InInNHD/PersonalWebsite2",
@@ -85,6 +253,14 @@
       "title": "v0.8.0 — 文章阅读体验与连续阅读",
       "prerelease": true,
       "url": "https://github.com/InInNHD/PersonalWebsite2/releases/tag/v0.8.0"
+    },
+    {
+      "id": "push:24693474075",
+      "kind": "PUSH",
+      "repo": "InInNHD/PersonalWebsite2",
+      "date": "2026-10-19T02:39:43Z",
+      "title": "推送到 main",
+      "url": "https://github.com/InInNHD/PersonalWebsite2/compare/beef2dc49d930fd9dea8d1f07b3b3f99e8789939...bee1ca91fb4c51e56bcbdb820bc99bb155f7a68f"
     },
     {
       "id": "commit:1394822311:bee1ca91fb4c51e56bcbdb820bc99bb155f7a68f",

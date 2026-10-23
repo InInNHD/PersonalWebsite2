@@ -32,12 +32,12 @@ async function html(state){
   app.component('RouterLink',{props:['to'],template:'<a><slot /></a>'})
   return renderToString(app)
 }
-test('关于页和头像可编译；默认公开资料不编造学习或经历',()=>{
+test('关于页和头像可编译；采用已确认学习方向，个人经历与联系信息留空',()=>{
   for(const file of ['src/views/AboutView.vue','src/components/ProfileAvatar.vue']){const {descriptor,errors}=parse(code(file));assert.deepEqual(errors,[]);const script=compileScript(descriptor,{id:file});assert.deepEqual(compileTemplate({id:file,filename:file,source:descriptor.template.content,compilerOptions:{bindingMetadata:script.bindings}}).errors,[])}
-  const p=profile();assert.equal(p.githubUrl,'https://github.com/InInNHD');assert.deepEqual(p.learningDirections,[]);assert.deepEqual(p.experiences,[]);assert.deepEqual(p.contactLinks,[])
+  const p=profile();assert.equal(p.githubUrl,'https://github.com/InInNHD');assert.equal(p.learningDirections.length,4);assert.ok(p.learningDirections.every(x=>x.title.trim()));assert.deepEqual(p.experiences,[]);assert.deepEqual(p.contactLinks,[])
 })
 test('真实模板：空个人区块隐藏，项目及提交标题HTML转义，非法外链不生成入口',async()=>{
-  const p=profile();p.contactLinks=[{label:'safe',url:'https://example.com'},{label:'unsafe-contact',url:'javascript:alert(1)'}]
+  const p=profile();p.learningDirections=[];p.contactLinks=[{label:'safe',url:'https://example.com'},{label:'unsafe-contact',url:'javascript:alert(1)'}]
   const state=about(async()=>response(snapshot()),p);await state.loadProjects();const rendered=await html(state)
   assert.match(rendered,/Alpha/);assert.match(rendered,/TypeScript/);assert.match(rendered,/&lt;script&gt;alert\(1\)&lt;\/script&gt;/);assert.doesNotMatch(rendered,/<script>/)
   assert.match(rendered,/&lt;b&gt;release&lt;\/b&gt;/);assert.doesNotMatch(rendered,/<b>release/)
@@ -102,6 +102,25 @@ test('同步累积旧公开推送、重复事件覆盖；移除不再公开仓�
   assert.equal(one.events.filter(x=>x.kind==='PUSH').length,2);assert.equal(two.events.length,one.events.length);assert.doesNotMatch(JSON.stringify(two),/not-in-output|obsolete|deleted|hidden/)
   await assert.rejects(collectGitHub('bad_user',null,github().request),/用户名/)
   await assert.rejects(collectGitHub('InInNHD',null,async()=>response({},403)),/HTTP 403/)
+})
+
+test('fork提交在API端按本人过滤；原创分支不受限，公开fork项目和Release仍保留',async()=>{
+  const api=github(),calls=[]
+  const request=async input=>{
+    const url=new URL(input);calls.push(url)
+    if(url.pathname==='/repos/InInNHD/Beta/branches')return response([{name:'main'}])
+    if(url.pathname==='/repos/InInNHD/Beta/commits'){
+      assert.equal(url.searchParams.get('author'),'InInNHD')
+      return response([{sha:'own-fork-commit',html_url:'https://github.com/InInNHD/Beta/commit/own-fork-commit',commit:{message:'自己的改动',author:{date:'2026-10-22T00:00:00Z'}}}])
+    }
+    if(url.pathname==='/repos/InInNHD/Beta/releases')return response([{id:99,tag_name:'v1',draft:false,published_at:'2026-10-23T00:00:00Z',html_url:'https://github.com/InInNHD/Beta/releases/tag/v1'}])
+    return api.request(input)
+  }
+  const data=await collectGitHub('InInNHD',null,request)
+  assert.equal(data.projects.find(x=>x.name==='Beta').fork,true)
+  assert.ok(data.events.some(x=>x.id==='commit:2:own-fork-commit'))
+  assert.ok(data.events.some(x=>x.id==='release:99'))
+  assert.ok(calls.filter(x=>x.pathname==='/repos/InInNHD/Alpha/commits').every(x=>!x.searchParams.has('author')))
 })
 test('同步CLI请求失败时保留已有快照，不产生半份JSON',async()=>{
   const folder=new URL('../../artifacts/v2-profile-acceptance/cli-check/',import.meta.url)

@@ -68,10 +68,13 @@ export async function collectGitHub(owner, previous = null, request = fetch) {
                 prerelease: release.prerelease, url: release.html_url })
         }
         // 公共活动无法恢复更早的每次push：当前可见分支的历史明确标为COMMIT。
+        // fork只收录仓库主人自己的历史提交；全部项目、推送与Release仍保留。
+        // author过滤在GitHub执行，避免先下载上游全量历史后再筛选。
         // 不包含作者邮箱、原始payload或token，提交标题仅保留首行。
         const commits = new Map()
         for (const branch of await pages(`${root}/branches`)) {
-            for (const commit of await pages(`${root}/commits?sha=${encodeURIComponent(branch.name)}`)) {
+            const author = repo.fork ? `&author=${encodeURIComponent(owner)}` : ''
+            for (const commit of await pages(`${root}/commits?sha=${encodeURIComponent(branch.name)}${author}`)) {
                 commits.set(commit.sha, commit)
             }
         }

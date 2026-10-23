@@ -115,13 +115,36 @@ def main():
                     if hashlib.sha256(archive.read(item)).hexdigest()!=manifest['media'][item.filename]: raise ValueError('媒体SHA256不一致')
             # 只在全新专用库恢复；CREATE DATABASE失败则绝不继续导入。
             run('mysql',[],f'CREATE DATABASE `{args.database}` CHARACTER SET utf8mb4;')
-            run('mysql',[args.database],(backup/'database.sql').read_text(encoding='utf-8'))
-            destination.mkdir(parents=True,exist_ok=False)
-            with zipfile.ZipFile(backup/'media.zip') as archive:
-                if set(archive.namelist())!=set(manifest['media']): raise ValueError('媒体清单不一致')
-                for name in archive.namelist():
-                    if not NAME.fullmatch(name): raise ValueError('媒体归档路径不合法')
-                    file=destination/name; file.write_bytes(archive.read(name))
-                    if digest(file)!=manifest['media'][name]: raise ValueError('媒体SHA256不一致')
+            # 只有上面的CREATE成功后，才拥有这个新库；失败时不能清理已有库。
+            destination_created=False
+            written=[]
+            try:
+                run('mysql',[args.database],(backup/'database.sql').read_text(encoding='utf-8'))
+                destination.mkdir(parents=True,exist_ok=False)
+                destination_created=True
+                with zipfile.ZipFile(backup/'media.zip') as archive:
+                    if set(archive.namelist())!=set(manifest['media']): raise ValueError('媒体清单不一致')
+                    for name in archive.namelist():
+                        if not NAME.fullmatch(name): raise ValueError('媒体归档路径不合法')
+                        file=destination/name
+                        # 独占创建，回滚只删除本次确实创建的文件，不覆盖其他文件。
+                        with file.open('xb') as output:
+                            written.append(file)
+                            output.write(archive.read(name))
+                        if digest(file)!=manifest['media'][name]: raise ValueError('媒体SHA256不一致')
+            except Exception as failure:
+                rollback_errors=[]
+                if destination_created:
+                    try:
+                        no_links(destination)
+                        for file in written:
+                            no_links(file); file.unlink(missing_ok=True)
+                        destination.rmdir() # 只移除空目录；不递归删除意外出现的内容。
+                    except OSError: rollback_errors.append('媒体目录')
+                    except ValueError: rollback_errors.append('媒体路径')
+                try: run('mysql',[],f'DROP DATABASE `{args.database}`;')
+                except RuntimeError: rollback_errors.append('专用恢复库')
+                if rollback_errors: raise RuntimeError('恢复失败，部分回滚未完成：'+ '、'.join(rollback_errors)+'；请保留现场检查，未触碰源库。') from failure
+                raise RuntimeError('恢复失败，本次新建的专用库与媒体文件已回滚；未触碰源库。') from failure
             print('隔离恢复完成：'+args.database+'；媒体SHA256全部一致。私有配置未自动加载。')
 if __name__=='__main__': main()

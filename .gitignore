@@ -22,3 +22,6 @@
 /personalwebsite/media/
 /media/
 __pycache__/
+
+# Local unpublished article bodies
+/docs/V2-CONTENT-DRAFTS.md

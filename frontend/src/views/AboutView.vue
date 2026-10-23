@@ -130,7 +130,7 @@ onMounted(loadProjects)
     <section v-if="snapshot" class="about-section" aria-labelledby="project-updates">
       <p class="v2-eyebrow">CHANGELOG / A CONTINUING STORY</p><h2 id="project-updates" ref="updatesTitle" tabindex="-1">项目更新链</h2>
       <p class="about-source">推送与 Release 使用各自事件日期；历史提交按提交记录日期排列，不等同于推送时间。日期均为北京时间。</p>
-      <details class="about-history-note"><summary>更新记录的范围</summary><p>每个仓库的公开推送活动仅提供近30天、最多300条；同步过的推送会继续保留。Release来自当前公开发布记录，历史提交覆盖当前可见分支。此处不代表所有历史推送均可恢复。</p></details>
+      <details class="about-history-note"><summary>更新记录的范围</summary><p>每个仓库的公开推送活动仅提供近30天、最多300条；同步过的推送会继续保留。Release来自当前公开发布记录，历史提交覆盖当前可见分支；fork仓库仅收录本人提交，避免混入上游历史。此处不代表所有历史推送均可恢复。</p></details>
       <div class="about-update-filters">
         <label>项目<select v-model="repository" @change="resetPage"><option value="">全部项目</option><option v-for="project in projects" :key="project.id" :value="project.fullName">{{ project.name }}</option></select></label>
         <label>记录类型<select v-model="kind" @change="resetPage"><option value="">全部记录</option><option value="PUSH">推送</option><option value="RELEASE">Release</option><option value="COMMIT">历史提交</option></select></label>

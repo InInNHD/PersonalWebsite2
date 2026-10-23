@@ -1,51 +1,32 @@
-# PersonalWebsite2
+# PersonalWebsite2 · 萤火手记
 
-个人网站第二版，包含 Vue/Vite 前端和 Spring Boot/MySQL 后端。当前支持文章阅读、Markdown、草稿与发布、管理员认证、资源链接管理、分类、文章多标签、组合筛选、标题/摘要搜索、文章分页、按年月归档、关于页及首页个人简介。
+基于Vue 3、Java 17 / Spring Boot与MySQL的个人网站，前后端分离。本地开发完成后再单独规划云部署。
 
-## 项目结构
+## 当前版本
 
-- `frontend/`：前端应用及回归测试。
-- `personalwebsite/`：后端应用及真实 MySQL 接口测试。
-- `database/`：按编号执行的数据库初始化与升级脚本。
-- `docs/`：手敲指南和项目进度。`05-tag-filter.md` 对应的标签筛选已完成，自动化测试通过。
+当前候选预发布 **v2.0.0-rc.1**（2026-10-23），构建版本为 **2.0.0-rc.1**；目标正式版仍为v2.0.0。此前v0.7.0～v0.12.0为分阶段预发布，原拟v0.13.0的恢复加固并入本次RC。
 
-第六轮搜索分页、第七轮文章归档及第八轮关于页与首页简介均已完成并验收。手敲指南见 `docs/06-article-search-pagination.md`、`docs/07-article-archive.md` 和 `docs/08-about-profile.md`；第八轮记录见 `docs/ABOUT-PROFILE-ACCEPTANCE.md`。个人文案集中在 `frontend/src/siteProfile.js`，本轮纳入 v0.6.0 预发布版本。
+[RC发布说明](docs/RELEASE-v2.0.0-rc.1.md) · [正式版说明草稿](docs/RELEASE-v2.0.0.md) · [发布准备与待办](docs/V2-RELEASE-READINESS.md) · [整站验收](docs/V2-FINAL-ACCEPTANCE.md) · [项目历史](docs/PROJECT-PROGRESS.md)
 
-第九轮暗色技术风格及移动端布局已完成并验收：实际前端 9 项回归测试、生产构建，以及桌面、平板和手机视口的浏览器检查均通过；独立 MySQL 中的手机写作发布和资源保存流程通过。手敲指南见 `docs/09-site-style-mobile.md`，验收记录见 `docs/STYLE-MOBILE-ACCEPTANCE.md`。
+整站技术验收：前端74项、专用MySQL后端32项、恢复工具5项，64组四档宽度和桌面Edge复核，以及新安装、升级、数据库与媒体恢复通过。用户已认可暗色风格；实体手机按用户要求暂缓，作为未验证限制保留；正式内容草稿待审阅。GitHub资料已成功刷新；云部署另行规划。
 
-第十轮备份恢复演练已完成：个人数据库五表、源码和配置已备份，并在独立库通过数据核对、应用启动、草稿隔离及写作发布验收。备份保留在已忽略的 `backups/` 中，演练环境已清理。详见 [操作指南](docs/10-backup-restore.md) 和 [验收记录](docs/BACKUP-RESTORE-ACCEPTANCE.md)。
+## 功能
 
-第一版既有功能的本地验收已通过：当前源码后端 11 项、前端 9 项测试及两端构建通过；独立库上的生产预览完成 27 项真实 HTTP 断言、浏览器写作发布与故障恢复、25 组响应式检查。详细范围和执行记录见 [本地完整验收](docs/LOCAL-ACCEPTANCE.md)。该结论覆盖已实现流程，产品展示与长期写作体验仍需提升。
+- 置顶/封面首页，Markdown正文、目录、代码高亮/复制、阅读进度、图片查看和连续阅读。
+- 分类/多标签、搜索、分页、归档、公开精选日记、资源分组及个人项目展示。
+- 独立管理员工作台，草稿/发布/撤回/回收/恢复、编辑预览、未保存保护。
+- 本地图片校验和公开隔离，数据库/源码配置/媒体离线备份与恢复失败回滚。
+- 响应式暗色界面、加载/空/错误/404状态、动态标题和键盘入口。
 
-当前进入[第二版改进计划](docs/V2-IMPROVEMENT-PLAN.md)：对照最初参考项目，依次完善设计样稿、首页与全站框架、文章阅读、内容导航、写作后台、资源图片及完整状态。继续本地开发，云部署安排在第二版效果和功能共同验收之后。
+## 目录
 
-第二版第一轮样稿已获用户确认，包含首页、文章详情、独立写作后台和组件规范。第二轮A「站点框架与真实首页」已完成手敲并通过功能验收：实际前端11项回归、生产构建、真实接口读取和26组响应式检查通过；SiteHeader.vue末尾多余标记已在B1验收收尾时清理。详见[手敲指南](docs/11-v2-home-foundation.md)和[实际验收记录](docs/V2-HOME-FOUNDATION-ACCEPTANCE.md)。该阶段已与后续B1、B2共同纳入v0.7.0预发布。独立样稿运行方式仍为 `node docs/design-v2/preview.mjs`，访问 `http://127.0.0.1:5177/`；详见[样稿说明与设计参数](docs/design-v2/README.md)。
-
-第二轮B按手敲节奏分为B1数据和B2导航状态。[第12节：封面、置顶、更新时间与公开统计](docs/12-v2-article-presentation.md)已完成并验收：实际前端14项、独立库后端15项、两端构建、8组HTTP检查和浏览器写作流程通过。两处误写标记已清理；个人库在备份恢复验证后成功执行005，原有数据核对一致，迁移后7组只读接口及浏览器首页/详情复核通过。详见[验收记录](docs/V2-ARTICLE-PRESENTATION-ACCEPTANCE.md)。[第13节B2](docs/13-v2-list-navigation.md)也已完成实际验收：前端17项、构建、浏览器筛选网址/刷新/前进后退/正文返回位置与手机流程通过，真实个人库8组只读检查通过，五表校验值未变化，详见[B2验收记录](docs/V2-LIST-NAVIGATION-ACCEPTANCE.md)。第二轮已完成并纳入v0.7.0阶段性预发布；下一轮文章阅读体验，云部署仍后置。
-
-第三轮[第14节3A阅读基础](docs/14-v2-article-reading.md)已完成实际验收：文章头部、正文布局、唯一章节锚点与目录、约计阅读时长、阅读进度和回顶均正常。实际前端23项及构建通过，浏览器长文/四档宽度/错误恢复/B2返回检查通过，真实个人库公开详情、草稿404及五表校验值复核通过，见[3A验收记录](docs/V2-READING-FOUNDATION-ACCEPTANCE.md)。[第15节3B](docs/15-v2-reading-media.md)也已完成实际验收：代码高亮、语言标签、复制反馈和正文图片查看正常；实际28项前端测试、构建、四档宽度和3A/B2回归通过，见[3B验收记录](docs/V2-READING-MEDIA-ACCEPTANCE.md)。[第16节3C](docs/16-v2-reading-neighbors.md)及第三轮本地功能验收也已通过：实际前端34项、隔离MySQL后端18项及两端构建通过；整轮目录/代码/图片/前后篇组合、错误恢复、四档宽度、原筛选及629px位置恢复正常，个人库3篇公开导航和草稿404核对通过，五表校验值未变化。见[第三轮验收记录](docs/V2-READING-NAVIGATION-ACCEPTANCE.md)。第三轮已纳入v0.8.0阶段性预发布；后续第四轮内容导航与个人展示。
-
-第四轮按4A分类/标签导航、4B归档与公开日记时间线、4C个人展示拆分。[第17节4A](docs/17-v2-topics.md)已完成实际验收：内容地图、公开计数、分类标签入口、主题分页与连续阅读返回正常；实际前端41项、隔离MySQL后端21项、两端构建、7组HTTP及四档宽度浏览器检查通过。个人库公开主题计数与数据库一致，五表校验值未变，业务代码无需修正，见[4A验收记录](docs/V2-TOPICS-ACCEPTANCE.md)。本节无迁移和新依赖，尚非第四轮新Release节点。[第18节4B](docs/18-v2-timeline.md)也已完成实际验收：前端46项、隔离MySQL后端24项、两端构建、7组HTTP及浏览器跨年/分页/连续阅读返回/错误重试/手机流程通过，个人库只读核对正常，见[4B验收记录](docs/V2-TIMELINE-ACCEPTANCE.md)。[第19节4C](docs/19-v2-profile-projects.md)及第四轮组合验收已于2026-10-21通过：实际前端54项、隔离MySQL后端24项、两端构建、7组HTTP和浏览器流程正常；6个公开项目及推送19条/Release17条/历史提交116条已生成本站快照。个人库零写入，五表校验值未变，详见[4C与整轮验收](docs/V2-PROFILE-ACCEPTANCE.md)。第四轮已纳入v0.9.0阶段性预发布，[发布说明](docs/RELEASE-v0.9.0.md)包含完整更新与验收范围。第五轮写作后台也已完成，第六轮资源与图片管理也已完成，第七轮完整状态与内容打磨也已完成，下一阶段为第八轮第二版候选验收。
-
-归档页为 `/archive`，独立公开日记页为 `/diary`；公开接口 `/api/articles/archive` 返回月份及文章数，可选 `type=DIARY` 只统计公开日记。列表接口复用 `month=YYYY-MM`、`type=DIARY` 和分页参数。两页网址保存月份/页码，正文及连续阅读保留来源与返回位置；只包含已发布文章，以首次发布时间归属年月。
-
-公开文章列表 `/api/articles` 现在返回分页对象：`items`、`total`、`page`、`size`、`totalPages`；默认第一页、每页 10 篇。升级时需同步前后端，旧数组解析方式不再适用。公开详情格式不变；第五轮管理员文章列表也已改为分页对象，后台详情新增 `deletedAt`，需同步升级前后端。
-
-第五轮5A/5B/5C已按用户授权直接实现并完成统一验收：独立登录与后台布局、组合筛选和服务端分页、Markdown编辑器、分类标签站内表单、撤回/软回收/恢复、未保存保护及原页重新验证。实际前端60项、隔离真实MySQL后端28项及两端构建通过，完整浏览器流程和四档宽度检查通过；个人库备份后已执行006，原有数据逐字段一致。见[使用及升级说明](docs/21-v2-admin-workflow.md)与[统一验收记录](docs/V2-ADMIN-WORKFLOW-ACCEPTANCE.md)。已发布[v0.10.0阶段性预发布](docs/RELEASE-v0.10.0.md)；第20节为历史5A指南，不再用于覆盖新后台。
-
-第六轮已完成并验收：资源分组/组内搜索、本站SVG图标和推荐理由、后台分组排序、本地PNG/JPEG图片库、封面/正文插入、媒体公开隔离，以及数据库＋配置＋媒体备份恢复。实际前端67项、独立真实MySQL后端32项、两端构建、四档宽度和恢复演练通过。个人库已备份后完成007，原五表原字段和行数据一致。见[使用及升级说明](docs/22-v2-resources-media.md)、[统一验收记录](docs/V2-RESOURCES-MEDIA-ACCEPTANCE.md)。已发布[v0.11.0阶段性预发布](docs/RELEASE-v0.11.0.md)。
-
-第七轮已直接实现并完成统一验收：统一加载骨架、空内容/无结果、错误重试和404，动态页面/文章标题与基础描述、键盘焦点及Escape返回；修复旧文章404覆盖新正文和未知深层文章路径等待。实际前端74项、构建、52组四档页面检查及故障恢复通过；个人库仅只读核对，数据校验值未变。21个Java源码/测试与上轮一致，本轮重新打包但未重跑32项后端测试。见[第23节使用说明](docs/23-v2-page-states.md)与[验收记录](docs/V2-PAGE-STATES-ACCEPTANCE.md)。第七轮已纳入[v0.12.0阶段性预发布](docs/RELEASE-v0.12.0.md)；无迁移，不要重跑007。下一第八轮整站候选验收，云部署仍后置。
-
-## GitHub公开项目资料同步
-
-关于页读取`frontend/public/github-profile.json`，该公开快照随源码提交。首次生成及每次推送/发布后，在项目根目录运行：
-
-```powershell
-node frontend/scripts/sync-github.mjs
-```
-
-命令使用`siteProfile.githubName`读取全部公开仓库及可核对更新；完整成功才替换快照，失败保留旧文件。生成后重新构建前端。访客浏览无需GitHub token或Java接口；可选token只放本机同步进程环境，不写入前端配置或JSON。推送、Release、历史提交分别记录日期，未保存且已超出GitHub活动窗口的推送无法恢复。
+| 路径 | 内容 |
+| --- | --- |
+| frontend/ | Vue应用、公开GitHub快照及前端测试 |
+| personalwebsite/ | Spring Boot后端与真实MySQL测试 |
+| database/ | 000～007一次性初始化及升级脚本 |
+| scripts/ | 本机备份恢复工具及标准库测试 |
+| docs/ | 使用指南、验收报告、设计与阶段历史 |
 
 ## 环境准备
 
@@ -102,7 +83,7 @@ SHOW TABLES;
 - 从 `v0.3.0`～`v0.6.0` 升级到当前第二版源码：备份后依次执行 `005-article-presentation.sql`、`006-article-recycle.sql`、`007-resources-media.sql`，再同步更新并重启前后端。
 - 从 `v0.7.0`～`v0.9.0` 升级：备份后依次执行一次 `006-article-recycle.sql`、`007-resources-media.sql`。
 - 从 `v0.10.0` 升级：备份后执行一次 `007-resources-media.sql`，同步更新前后端。
-- 本工作区个人库已完成005、006和007：跳过已执行脚本。可用 `SHOW COLUMNS FROM article` 核对 `cover_url`、`pinned`、`updated_at`、`deleted_at`。第六轮迁移前备份在 `backups/20261021-sixth-round-personal-233702`；原有五表原字段和行数据逐字段一致。
+- 已完成007的安装（v0.11.0及以后）：无需新迁移，只更新对应代码与产物；当前本机已完成007，不要重复执行。
 
 已有数据库升级时跳过 `000-init-article.sql`。分类升级后，已有文章的 `category_id` 为 `NULL`，页面显示“未分类”；标签升级不会修改现有文章，没有关联记录的文章显示为无标签。
 
@@ -114,7 +95,9 @@ SHOW TABLES;
 
 ```powershell
 cd E:\PersonalWebsite2\personalwebsite
-Copy-Item src/main/resources/application.properties.example src/main/resources/application.properties
+if (-not (Test-Path src/main/resources/application.properties)) {
+    Copy-Item src/main/resources/application.properties.example src/main/resources/application.properties
+}
 ```
 
 使用 PowerShell 时，在同一个终端设置环境变量后启动：
@@ -137,37 +120,47 @@ PowerShell 的环境变量仅对当前终端和它启动的进程生效，不会
 
 ```powershell
 cd E:\PersonalWebsite2\frontend
-npm ci
+npm.cmd ci
 npm.cmd run dev
 ```
 
 打开 Vite 输出的地址。进入“管理”或 `/admin`，独立登录页只需输入管理员密码，账号固定为 `admin`。密码仅保存在当前标签页内存，刷新需重新登录。文章管理、分类标签和资源各有独立入口。
 
-## 验证与构建
+## 测试与构建
 
-前端回归测试和生产构建：
-
-```powershell
-cd E:\PersonalWebsite2\frontend
-node --test tests/*.test.mjs
-npm.cmd run build
-```
-
-后端测试必须使用独立的真实MySQL库，先在专用库应用000～007并配置Java17与本地环境变量；不要对个人内容库执行写入测试。`AdminWorkflowTests` 和 `ResourceMediaFlowTests` 会强制校验库名前缀为 `pw_v2admin_acceptance_`，因此直接使用个人库运行test/package会被拒绝。
+在根目录运行前端和工具测试：
 
 ```powershell
-cd E:\PersonalWebsite2\personalwebsite
-# 确认当前终端的DB_URL指向已初始化的pw_v2admin_acceptance_开头专用库
-.\mvnw.cmd test
-.\mvnw.cmd package
+node --test frontend/tests/*.test.mjs
+python -m unittest discover -s scripts/tests -v
+npm.cmd --prefix frontend run build
 ```
 
-导航、主题、归档日记共9项专项位于 `docs/checks/ArticleNavigationGuideTests.java`、`TopicGuideTests.java` 和 `TimelineGuideTests.java`，在适配专用库名前缀的隔离副本中执行；上述Maven命令运行 `personalwebsite/src/test` 内的23项测试。本轮32项包含23项实际测试与这9项专项，范围见 `docs/V2-RESOURCES-MEDIA-ACCEPTANCE.md`。
+后端测试需要已初始化000～007的独立真实MySQL库。配置DB_URL到 `pw_v2admin_acceptance_` 开头的专用库；应用账号只给该库读写权限，不允许访问个人库。再进入personalwebsite运行 `.\mvnw.cmd test`。测试会写入数据、自增编号可能前进，不能对个人内容库执行。常规src/test有23项；整站32项还包含docs/checks中的9项导航、主题及时间线专项，执行范围见整站验收报告。
 
-测试写入通过事务回滚，但MySQL自增编号仍可能前进。测试中的固定密码仅属于隔离测试上下文，不是实际管理员密码。
+发布JAR必须在不含真实配置的干净副本打包，将示例配置复制为application.properties后使用环境变量。执行 `.\mvnw.cmd -DskipTests package` 得到 `target/personalwebsite-2.0.0-rc.1.jar`；此命令跳过测试，不能作为测试通过的依据。前端dist需使用HTTP服务、SPA页面回退及同源/api代理；API错误不能回退成HTML。
 
-最新 `v0.12.0` 预发布包含统一页面状态、404、动态元信息与键盘体验，完整说明见 `docs/RELEASE-v0.12.0.md`；此前版本见 `docs/RELEASE-v0.11.0.md`。从v0.11.0升级只需更新并重新构建/启动前端，无新增依赖或SQL迁移，后端可沿用；更早安装仍需补齐尚未执行的迁移。本机已完成006和007，不要重复执行。Release提供源码，不包含个人数据库、配置、备份或上传图片，运行及恢复时需自行准备匹配的数据和媒体目录。
+## GitHub公开资料
 
-第五轮、第六轮分别纳入v0.10.0和v0.11.0；第七轮纳入本轮v0.12.0。下一第八轮整站候选验收，云部署仍后置。
+关于页读取frontend/public/github-profile.json。每次推送或Release后在根目录运行：
 
-本地图片通过 `/api` 同源代理。`app.media.directory` 默认相对Java工作目录，建议按[第22节](docs/22-v2-resources-media.md)设置绝对路径；备份必须同时包含该媒体目录。备份脚本为 `scripts/local-backup.py`，Windows建议Python3.12+，示例及隔离恢复流程见第22节。文章保存请求新增 `bodyMediaUrls` 显式授权列表，当前前端自动生成，其他客户端也需同步适配本站媒体。
+```powershell
+node frontend/scripts/sync-github.mjs
+```
+
+完整成功才替换快照，再构建前端；失败保留旧文件。推送、Release、历史提交区分记录，超出公开活动窗口且从未保存的推送不能恢复。2026-10-23已成功同步7个公开项目、172条更新记录（推送25、Release 21、历史提交126）。全部公开仓库保留，fork历史提交在API端按本人过滤；原创仓库仍遍历公开分支历史。可选GITHUB_TOKEN仅供本机同步进程使用，不写入前端、JSON或Git。访客无需令牌。
+
+## 图片、备份与恢复
+
+建议使用MEDIA_DIRECTORY指定绝对路径，避免随Java工作目录变化。图片通过受控/api接口读取，不能直接公开磁盘目录。保存文章的bodyMediaUrls明确授权正文媒体，前端自动生成。
+
+备份前停止数据库和媒体写入。scripts/local-backup.py需要Python3.12+及MySQL客户端，包含SQL、工作树源码、配置与媒体；配置和内容只留本机。恢复只能使用不存在的pw_media_restore_专用库和不存在的媒体目录，核对完整性后再规划业务切换。
+
+[图片及备份使用说明](docs/22-v2-resources-media.md) · [整站安装升级与恢复说明](docs/24-v2-final-acceptance.md)
+
+GitHub源码、前端ZIP和JAR均不包含个人数据库、真实配置、备份或上传图片，不能代替内容备份。开发历史和手敲指南保留在docs/，不要用早期指南覆盖当前业务文件。
+
+
+## 正式内容与手机验收
+
+站点介绍已应用，3篇文章已保存为未公开草稿，见[录入状态](docs/V2-CONTENT-ENTRY.md)。完整文章草稿文档仅保留本机，不随Git或Release附件发布；数据库内容也不包含在源码中。[实体手机操作清单](docs/V2-PHONE-ACCEPTANCE.md)仍未执行，按用户要求作为本次RC的已知限制保留。
