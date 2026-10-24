@@ -16,6 +16,7 @@ const showFilters = computed(() => filtersExpanded.value || route.hash === '#art
 
 
 const articles = ref([])
+const matches = ref({})
 const type = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -81,6 +82,7 @@ async function loadArticles() {
     if (requestId !== latestRequestId || requestKey !== listKey(route)) return
 
     articles.value = data.items
+    matches.value = data.matches ?? {}
     total.value = data.total
     page.value = data.page
     totalPages.value = data.totalPages
@@ -92,6 +94,7 @@ async function loadArticles() {
   } catch (cause) {
     if (requestId !== latestRequestId) return
     articles.value = []
+    matches.value = {}
     total.value = 0
     totalPages.value = 0
     error.value = cause instanceof Error ? cause.message : '加载文章列表失败'
@@ -237,7 +240,7 @@ function clearAll() {
             </select>
           </label>
           <form class="v2-search" @submit.prevent="searchArticles">
-            <label>搜索标题或摘要
+            <label>搜索标题、摘要或正文
               <input v-model="keywordInput" type="search" maxlength="100" placeholder="例如：Java、生活记录">
             </label>
             <button type="submit">搜索</button>
@@ -258,7 +261,7 @@ function clearAll() {
         <PageState v-else-if="articles.length === 0" heading="h3" title="第一篇公开记录，还在路上" message="笔记与生活会慢慢整理到这里。也可以先看看资源与个人介绍。"><RouterLink class="v2-action" to="/resources">浏览资源 →</RouterLink><RouterLink class="v2-action" to="/about">关于作者 →</RouterLink></PageState>
         <div v-else class="v2-grid" :class="{ compact }">
           <ArticleCard v-for="article in articles" :key="article.id" :article="article"
-                       :featured="false" :return-to="route.fullPath" />
+                       :featured="false" :match="matches[article.id]" :return-to="route.fullPath" />
         </div>
         <ArticlePagination v-if="!error" :page="page" :total-pages="totalPages" :loading="loading" @change="changePage" />
       </section>

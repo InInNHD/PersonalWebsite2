@@ -15,14 +15,14 @@ function navigation(document={getElementById:()=>null}){
 }
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject}}
 const response=(data,status=200)=>new Response(JSON.stringify(data),{status})
-function detail(fetch,headings={}){
+function detail(fetch,headings={},toolsHeight=0){
   const mounted=[],leaves=[],finished=[],events=[],frames=new Map()
   let serial=0
   const route={path:'/articles/1',params:{id:'1'},query:{from:'/?page=2'}}
   const window={innerHeight:900,scrollY:0,addEventListener:(type)=>events.push('add:'+type),removeEventListener:(type)=>events.push('remove:'+type),requestAnimationFrame:fn=>{frames.set(++serial,fn);return serial},cancelAnimationFrame:id=>frames.delete(id),matchMedia:()=>({matches:true}),scrollTo:options=>events.push(options)}
-  const bindings={usePageMeta:()=>{},ref,computed,nextTick,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),watch:()=>{},useRoute:()=>route,listReturn:()=>({path:'/'}),finishReading:async path=>{finished.push(path)},renderArticle,siteProfile:{nickname:'tester'},fetch,window,document:{getElementById:id=>headings[id]??null}}
+  const bindings={usePageMeta:()=>{},ref,computed,nextTick,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),watch:()=>{},useRoute:()=>route,listReturn:()=>({path:'/'}),finishReading:async path=>{finished.push(path)},renderArticle,siteProfile:{nickname:'tester'},fetch,window,document:{getElementById:id=>headings[id]??null,querySelector:()=>({getBoundingClientRect:()=>({height:toolsHeight})})}}
   const script=parse(code('views/ArticleDetailView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
-  const app=new Function(...Object.keys(bindings),`${script};return {loadArticle,article,contentHtml,error,notFound,loading,body,progress,activeId,showTop,rendered,updateReading,scheduleReading,backToTop}`)(...Object.values(bindings))
+  const app=new Function(...Object.keys(bindings),`${script};return {loadArticle,article,contentHtml,error,notFound,loading,body,progress,activeId,showTop,rendered,updateReading,scheduleReading,backToTop,changeReading,readingSize,focusedReading}`)(...Object.values(bindings))
   return {...app,window,route,finished,events,frames,mount:()=>mounted.forEach(fn=>fn()),leave:()=>leaves.forEach(fn=>fn())}
 }
 
@@ -56,6 +56,18 @@ test('阅读时长按中文和其他词估算，空内容无空目录',()=>{
   assert.equal(renderArticle('字'.repeat(300)+'word '.repeat(200)).minutes,2)
   assert.equal(renderArticle('').minutes,1)
   assert.deepEqual(renderArticle('没有标题的短文').toc,[])
+})
+
+test('真实阅读布局变更保留当前段落位置，离开后的异步布局不再滚动',async()=>{
+  const app=detail(async()=>response({}));app.window.scrollY=600
+  let top=160
+  const anchor={isConnected:true,getBoundingClientRect:()=>({top,bottom:top+100})}
+  app.body.value={querySelectorAll:()=>[anchor]}
+  const changing=app.changeReading({size:19,focused:true});top=240;await changing
+  assert.equal(app.readingSize.value,19);assert.equal(app.focusedReading.value,true)
+  assert.deepEqual(app.events.at(-1),{top:680,behavior:'instant'})
+  const pending=app.changeReading({size:16,focused:false});app.leave();const before=app.events.length;top=500;await pending
+  assert.equal(app.events.length,before)
 })
 
 test('文章旧响应丢弃，404/失败可重试，离开后不接受数据',async()=>{
@@ -110,6 +122,12 @@ test('阅读进度限制范围并更新目录，短文和监听清理正常',()=
   app.mount();app.scheduleReading();app.scheduleReading();assert.equal(app.frames.size,1)
   app.backToTop();assert.deepEqual(app.events.at(-1),{top:0,behavior:'auto'})
   app.leave();assert.equal(app.frames.size,0);assert.ok(app.events.includes('remove:scroll'));assert.ok(app.events.includes('remove:resize'))
+  // 窄屏工具条换行后，定位在136px的章节也应立即高亮。
+  headings['read-结尾']={getBoundingClientRect:()=>({top:136})}
+  const mobile=detail(async()=>response({}),headings,112)
+  mobile.article.value={contentMarkdown:'## 开头\n\n正文\n\n## 结尾'}
+  mobile.body.value={getBoundingClientRect:()=>({top:-200,height:3000,bottom:2800})}
+  mobile.updateReading();assert.equal(mobile.activeId.value,'read-结尾')
 })
 test('旧404不能覆盖新正文，卸载后忽略404，非法编号不发送网络请求',async()=>{
   const first=deferred(),second=deferred();let calls=0

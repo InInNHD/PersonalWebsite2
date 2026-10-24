@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/articles")
@@ -59,7 +60,8 @@ public class ArticleController {
             long total,
             int page,
             int size,
-            long totalPages
+            long totalPages,
+            Map<Long, ArticleSearch.Match> matches
     ) {}
 
     // 一个目录项表示“某年某月有多少篇已发布文章”。
@@ -162,8 +164,10 @@ public class ArticleController {
             // LOCATE 查找普通子串：找到时位置大于 0，找不到时为 0。
             // %、_、! 都是普通字符，不需要自己维护 LIKE 转义逻辑。
             // 关键词始终通过 ? 绑定，不能直接拼到 SQL 中。
-            // ponytail: 子串搜索会扫描候选文章；文章量增大且查询变慢时再评估全文索引。
-            fromWhere += " AND (LOCATE(?, a.title) > 0 OR LOCATE(?, a.summary) > 0)";
+            // ponytail: 标题/摘要/Markdown源码的子串检索会扫描公开候选；数据量增大且实测变慢时评估索引。
+            // 保留普通字符语义，中文短词、%、_和代码符号均可搜索。
+            fromWhere += " AND (LOCATE(?, a.title) > 0 OR LOCATE(?, a.summary) > 0 OR LOCATE(?, a.content_markdown) > 0)";
+            parameters.add(search);
             parameters.add(search);
             parameters.add(search);
         }
@@ -196,12 +200,19 @@ public class ArticleController {
             """ + fromWhere;
         // 先在数据库里排序，再分页；不能只对取回的当前页排序。
         // 归档按发布时间浏览；首页及普通筛选优先显示置顶文章。
-        sql += month == null
-                ? " ORDER BY a.pinned DESC, a.published_at DESC, a.id DESC"
-                : " ORDER BY a.published_at DESC, a.id DESC";
-        sql += " LIMIT ? OFFSET ?";
         // 只给本页查询加 LIMIT/OFFSET，不能污染上面的总数查询参数。
         List<Object> pageParameters = new ArrayList<>(parameters);
+        if (!search.isEmpty()) {
+            // 标题命中优先，其次摘要、正文；同级使用日期与唯一id稳定排序，翻页不重复。
+            sql += " ORDER BY CASE WHEN LOCATE(?,a.title)>0 THEN 0 WHEN LOCATE(?,a.summary)>0 THEN 1 ELSE 2 END,"
+                    + " a.published_at DESC, a.id DESC";
+            pageParameters.add(search);
+            pageParameters.add(search);
+        } else {
+            sql += month == null ? " ORDER BY a.pinned DESC, a.published_at DESC, a.id DESC"
+                    : " ORDER BY a.published_at DESC, a.id DESC";
+        }
+        sql += " LIMIT ? OFFSET ?";
         pageParameters.add(size);
         pageParameters.add(offset);
 
@@ -230,7 +241,8 @@ public class ArticleController {
                 tagsByArticle.getOrDefault(a.id(), List.of()),
                 a.coverUrl(), a.pinned(), a.updatedAt()
         )).toList();
-        return new ArticlePage(items, total, actualPage, size, totalPages);
+        return new ArticlePage(items, total, actualPage, size, totalPages,
+                ArticleSearch.snippets(jdbcTemplate, items.stream().map(ArticleSummary::id).toList(), search));
     }
 
     @GetMapping("/{id}")

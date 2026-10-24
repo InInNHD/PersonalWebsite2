@@ -352,13 +352,15 @@ void articleSearchPaginationAndValidation() throws Exception {
     var third = publicResponse(base + "&page=3", 200);
     assertEquals(10, second.get("items").size());
     assertEquals(3, third.get("items").size());
-    // 三页合起来必须正好是预期的 23 篇，按编号从大到小排列。
+    // 标题命中优先；其余摘要命中按时间、编号倒序，跨页不重复。
     var actualIds = new java.util.ArrayList<Long>();
     for (var result : java.util.List.of(first, second, third)) {
         for (var item : result.get("items")) actualIds.add(item.get("id").asLong());
     }
     var expectedIds = new java.util.ArrayList<>(ids);
     java.util.Collections.reverse(expectedIds);
+    expectedIds.remove(ids.get(0));
+    expectedIds.add(0, ids.get(0));
     assertEquals(expectedIds, actualIds);
 
     var beyond = publicResponse(base + "&page=999", 200);
@@ -371,7 +373,7 @@ void articleSearchPaginationAndValidation() throws Exception {
     assertEquals(0, empty.get("items").size());
     var small = publicResponse(base + "&size=1&page=2", 200);
     assertEquals(23, small.get("totalPages").asLong());
-    assertEquals(ids.get(21).longValue(), small.get("items").get(0).get("id").asLong());
+    assertEquals(ids.get(22).longValue(), small.get("items").get(0).get("id").asLong());
     var blank = publicResponse("/api/articles?categoryId=" + category + "&keyword=%20%20", 200);
     assertEquals(23, blank.get("total").asLong());
 
@@ -384,7 +386,7 @@ void articleSearchPaginationAndValidation() throws Exception {
 }
 
 @Test
-void searchTreatsSymbolsLiterallyAndDoesNotSearchBody() throws Exception {
+void searchTreatsSymbolsLiterallyAndIncludesBody() throws Exception {
     long category = createCategory("-literal");
     for (String title : java.util.List.of(prefix + "100%", prefix + "under_score",
             prefix + "bang!", prefix + "plain")) {
@@ -400,7 +402,13 @@ void searchTreatsSymbolsLiterallyAndDoesNotSearchBody() throws Exception {
     for (String symbol : java.util.List.of("%25", "_", "%21")) {
         assertEquals(1, publicResponse(base + symbol, 200).get("total").asLong());
     }
-    assertEquals(0, publicResponse(base + prefix + "-body-only", 200).get("total").asLong());
+    var bodyResults = publicResponse(base + prefix + "-body-only", 200);
+    assertEquals(4, bodyResults.get("total").asLong());
+    for (var item : bodyResults.get("items")) {
+        var match = bodyResults.get("matches").get(item.get("id").asText());
+        assertEquals("body", match.get("field").asText());
+        assertEquals(prefix + "-body-only", match.get("match").asText());
+    }
     assertEquals(0, publicResponse(base + "%27%20OR%201%3D1%20--", 200).get("total").asLong());
 }
 

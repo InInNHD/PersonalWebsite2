@@ -11,6 +11,7 @@ import ReadingToc from '../components/ReadingToc.vue'
 import ReadingContent from '../components/ReadingContent.vue'
 import CollectionTrail from '../components/CollectionTrail.vue'
 import ArticleNeighbors from '../components/ArticleNeighbors.vue'
+import ReadingTools from '../components/ReadingTools.vue'
 
 
 const route = useRoute()
@@ -24,6 +25,21 @@ const coverFailed = ref(false)
 const progress = ref(0)
 const activeId = ref('')
 const showTop = ref(false)
+const readingSize = ref(16), focusedReading = ref(false)
+let layoutChange = 0
+async function changeReading(settings) {
+  const change = ++layoutChange
+  // 以屏幕中正在读的段落为锚点，改字号或布局后保持它的位置。
+  const anchor = [...(body.value?.querySelectorAll('h2,h3,p,pre,li') ?? [])]
+    .find(node => node.getBoundingClientRect().bottom > 140)
+  const top = anchor?.getBoundingClientRect().top
+  readingSize.value = settings.size
+  focusedReading.value = settings.focused
+  await nextTick()
+  if (disposed || change !== layoutChange) return
+  if (anchor?.isConnected) window.scrollTo({top: window.scrollY + anchor.getBoundingClientRect().top - top, behavior: 'instant'})
+  scheduleReading()
+}
 const types = { NOTE: '笔记', THOUGHT: '心得', DIARY: '日记' }
 usePageMeta(() => notFound.value ? '文章不存在' : article.value?.title || '文章阅读', () => article.value?.summary || '阅读公开笔记、心得与生活记录。', () => notFound.value)
 const rendered = computed(() => renderArticle(article.value?.contentMarkdown ?? ''))
@@ -39,11 +55,13 @@ function updateReading() {
   const value = range > 0 ? (28 - rect.top) / range * 100 : rect.bottom <= window.innerHeight ? 100 : 0
   progress.value = Math.round(Math.max(0, Math.min(100, value)))
   showTop.value = window.scrollY > 500
-  // 选中最近经过视口上方100px参考线的h2/h3；到文末时选中最后一章。
+  // 参考线随吸顶工具条换行而下移，与目录跳转的预留高度一致。
+  const toolsHeight = document.querySelector?.('.reading-tools')?.getBoundingClientRect().height ?? 0
+  const headingLine = Math.max(100, toolsHeight + 25)
   let current = rendered.value.toc[0]?.id ?? ''
   for (const item of rendered.value.toc) {
     const heading = document.getElementById(item.id)
-    if (heading && heading.getBoundingClientRect().top <= 100) current = item.id
+    if (heading && heading.getBoundingClientRect().top <= headingLine) current = item.id
   }
   if (progress.value === 100) current = rendered.value.toc.at(-1)?.id ?? ''
   activeId.value = current
@@ -73,6 +91,8 @@ onBeforeUnmount(() => {
 
 async function loadArticle(id) {
   const requestId = ++latestRequestId
+  layoutChange += 1
+  focusedReading.value = false
   const path = route.path
   loading.value = true
   error.value = ''
@@ -112,12 +132,13 @@ watch(() => route.params.id, loadArticle, { immediate: true })
 </script>
 
 <template>
-  <div class="reading-page">
+  <div class="reading-page" :class="{ 'is-focused': focusedReading }" :style="{ '--reading-size': `${readingSize}px` }">
     <RouterLink class="back-link" :to="returnLocation">← 返回来处</RouterLink>
     <PageState v-if="loading" kind="loading" heading="h1" layout="article" title="正在打开这篇文章…" />
     <PageState v-else-if="notFound" kind="not-found" heading="h1" title="这篇记录暂时无法找到" message="文章可能尚未公开、已经撤回，或链接有误。可以返回列表浏览其他记录。" retry-label="重新检查文章" @retry="loadArticle(route.params.id)"><RouterLink class="v2-action" :to="returnLocation">返回来处 →</RouterLink></PageState>
     <PageState v-else-if="error" kind="error" heading="h1" title="暂时无法阅读" :message="error" retry-label="重新加载文章" @retry="loadArticle(route.params.id)" />
     <template v-else-if="article">
+      <ReadingTools :article-id="article.id" @change="changeReading" />
       <div class="reading-progress" role="progressbar" aria-label="正文阅读进度"
            :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100">
         <span :style="{ width: `${progress}%` }"></span>

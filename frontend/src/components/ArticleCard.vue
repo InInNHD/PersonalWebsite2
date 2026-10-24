@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import noteCover from '../assets/note.svg'
 import thoughtCover from '../assets/thought.svg'
 import diaryCover from '../assets/diary.svg'
+import SearchSnippet from './SearchSnippet.vue'
 
 const props = defineProps({
   article: { type: Object, required: true },
@@ -10,6 +11,7 @@ const props = defineProps({
   featured: { type: Boolean, default: false },
   // 正文链接携带当前列表网址，刷新详情后仍可返回相同条件。
   returnTo: { type: String, default: '/' },
+  match: { type: Object, default: null },
 })
 const names = { NOTE: '笔记', THOUGHT: '心得', DIARY: '日记' }
 const covers = { NOTE: noteCover, THOUGHT: thoughtCover, DIARY: diaryCover }
@@ -34,7 +36,8 @@ const path = computed(() => ({ path: `/articles/${props.article.id}`, query: { f
     <div class="v2-post-body">
       <div class="v2-meta"><span v-if="article.pinned" class="v2-pin">置顶</span><span class="v2-badge">{{ names[article.type] ?? '文章' }}</span><RouterLink v-if="article.categoryId != null" :to="{ path: '/topics', query: { kind: 'category', id: String(article.categoryId) }, hash: '#entries' }">{{ article.categoryName }}</RouterLink><span v-else>未分类</span></div>
       <h3><RouterLink :to="path">{{ article.title }}</RouterLink></h3>
-      <p class="v2-summary">{{ article.summary || '打开文章，继续阅读。' }}</p>
+      <SearchSnippet v-if="match" :match="match" />
+      <p v-else class="v2-summary">{{ article.summary || '打开文章，继续阅读。' }}</p>
       <time class="v2-meta" :datetime="article.publishedAt">{{ article.publishedAt?.slice(0, 10) ?? '发布时间未记录' }}</time>
       <time v-if="article.updatedAt" class="v2-meta" :datetime="article.updatedAt">
         更新于 {{ article.updatedAt.slice(0, 10) }}

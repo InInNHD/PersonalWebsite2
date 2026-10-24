@@ -13,7 +13,7 @@ function navigation() {
   const source=code('listNavigation.js').replace(/^import[^\n]*\n/gm,'').replaceAll('export ','')
   return new Function('nextTick',`${source};return {listQuery,listKey,listHash,listReturn,prepareList,finishList,listScroll,rememberList}`)(nextTick)
 }
-const response=(items,page=1,total=items.length)=>new Response(JSON.stringify({items,page,total,size:10,totalPages:Math.ceil(total/10)}))
+const response=(items,page=1,total=items.length,matches={})=>new Response(JSON.stringify({items,page,total,size:10,totalPages:Math.ceil(total/10),matches}))
 const settle=async()=>{for(let i=0;i<12;i++) await nextTick()}
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject}}
 function list(initialQuery,fetch){
@@ -33,7 +33,7 @@ function list(initialQuery,fetch){
   const script=parse(code('views/ArticleListView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
   const scope=effectScope()
   const bindings={compactArticles:ref(false),ref,computed,watch,onBeforeUnmount:f=>cleanup.push(f),onMounted:()=>{},onBeforeRouteLeave:()=>{},useRoute:()=>route,useRouter:()=>router,fetch,window:{scrollX:0,scrollY:100},...nav}
-  scope.run(()=>{app=new Function(...Object.keys(bindings),`${script};return {type,categoryId,tagId,keyword,keywordInput,page,totalPages,articles,error,loading,selectType,selectCategory,searchArticles,clearSearch,clearAll,changePage,loadArticles}`)(...Object.values(bindings))})
+  scope.run(()=>{app=new Function(...Object.keys(bindings),`${script};return {type,categoryId,tagId,keyword,keywordInput,page,totalPages,articles,matches,error,loading,selectType,selectCategory,searchArticles,clearSearch,clearAll,changePage,loadArticles}`)(...Object.values(bindings))})
   return {...app,route,router,history,leave:()=>{cleanup.forEach(fn=>fn());scope.stop()}}
 }
 
@@ -91,9 +91,9 @@ test('切换网址后旧响应不能覆盖新列表，失败可重试且卸载�
   const app=list({type:'NOTE'},()=>{const p=deferred();queue.push(p);return p.promise})
   try{
     await app.selectType('DIARY')
-    queue[1].resolve(response([{id:2}]));await settle()
-    queue[0].resolve(response([{id:1}]));await settle()
-    assert.equal(app.articles.value[0].id,2)
+    queue[1].resolve(response([{id:2}],1,1,{2:{match: '新正文'}}));await settle()
+    queue[0].resolve(response([{id:1}],1,1,{1:{match: '旧正文'}}));await settle()
+    assert.equal(app.articles.value[0].id,2);assert.deepEqual(app.matches.value,{2:{match: '新正文'}})
     const retry=app.loadArticles();queue[2].reject(Error('offline'));await retry
     assert.equal(app.error.value,'offline');assert.deepEqual(app.articles.value,[]);assert.equal(app.loading.value,false)
     const recover=app.loadArticles();queue[3].resolve(response([{id:3}]));await recover

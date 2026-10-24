@@ -1,4 +1,23 @@
-/* 第三版第二轮：沿用暗色变量，收紧首屏并区分阅读入口。 */
+/* 第三版：内容组织、正文搜索与阅读设置。 */
+.search-snippet { margin: 0; line-height: 1.85; font-size: 13px; color: var(--color-muted); overflow-wrap: anywhere; white-space: pre-wrap; }
+.search-snippet small { display: block; font-size: 11px; color: var(--color-accent); margin-bottom: 6px; }
+.search-snippet mark { background: #b7d8bd; color: #101619; padding: 1px 2px; border-radius: 2px; }
+/* 布局切换由正文段落补偿位置，避免浏览器再次自动锚定。 */
+.reading-page { overflow-anchor: none; }
+.reading-page .reading-body { font-size: var(--reading-size, 16px); }
+.reading-tools { position: sticky; top: 8px; z-index: 5; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; padding: 8px; margin: 16px 0 24px; }
+.reading-tool-buttons, .reading-tool-buttons > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.reading-tool-buttons button { min-height: 44px; font-size: 12px; background: var(--color-surface); }
+.reading-tool-buttons button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-accent); border-color: var(--color-accent); }
+.reading-tools p, .reading-tools label { font-size: 12px; margin: 8px; }
+.reading-tools input { width: 100%; }
+.v2-site:has(.reading-page.is-focused) > .v2-header, .v2-site:has(.reading-page.is-focused) > .v2-footer { display: none; }
+.reading-page.is-focused { max-width: 780px; margin: auto; }
+.reading-page.is-focused .reading-layout { grid-template-columns: minmax(0, 1fr); }
+.reading-page.is-focused .reading-toc { display: none; }
+.reading-page.is-focused .reading-mobile-toc { display: block; padding: 12px 16px; margin-bottom: 28px; border: 1px solid var(--color-border); border-radius: 10px; }
+.reading-page.is-focused .reading-mobile-toc summary { min-height: 44px; padding: 10px 0; cursor: pointer; }
+.reading-page .reading-body h2, .reading-page .reading-body h3 { scroll-margin-top: 140px; }
 .v3-home, .v3-library, .v3-collection { min-width: 0; }
 .v3-intro { display: grid; grid-template-columns: 1.45fr 1fr; gap: 64px; padding: 44px 0 38px; align-items: center; }
 .v3-intro h1 { font-size: clamp(30px, 3.1vw, 43px); line-height: 1.4; margin: 14px 0; font-weight: 600; }
