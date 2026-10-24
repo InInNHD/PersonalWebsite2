@@ -13,8 +13,10 @@ export function usePageMeta(title, description, noIndex = false) {
   onBeforeUnmount(() => { if (contentMeta.value?.owner === owner) contentMeta.value = null })
 }
 export function resolvePageMeta(route, custom = null) {
-  const names = { '/': '首页', '/topics': '内容地图', '/archive': '文章归档', '/diary': '公开日记', '/resources': '资源收藏', '/about': `关于 ${siteProfile.nickname}` }
+  const names = { '/articles': '文章库', '/projects': '项目与更新', '/': '首页', '/topics': '内容地图', '/archive': '文章归档', '/diary': '公开日记', '/resources': '资源收藏', '/about': `关于 ${siteProfile.nickname}` }
   const descriptions = {
+    '/articles': '按栏目、分类、标签与关键词浏览公开文章。',
+    '/projects': '个人项目案例、公开仓库与可核对的更新记录。',
     '/': '记录学习中的笔记、思考与愿意公开的生活片段。',
     '/topics': '沿着分类与标签探索公开笔记、心得和日记。',
     '/archive': '按年月回看已发布的学习与生活记录。',
@@ -24,9 +26,10 @@ export function resolvePageMeta(route, custom = null) {
   }
   const admin = route.path === '/admin' || route.path.startsWith('/admin/')
   const article = /^\/articles\/[^/]+\/?$/.test(route.path)
-  const known = names[route.path] || article || admin
+  const collection = /^\/collections\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(route.path)
+  const known = names[route.path] || article || admin || collection
   const entry = custom?.key === pageMetaKey(route) ? custom : null
-  const title = entry?.title || (admin ? route.meta?.adminTitle || '内容管理' : names[route.path] || (article ? '文章阅读' : '页面不存在'))
+  const title = entry?.title || (admin ? route.meta?.adminTitle || '内容管理' : names[route.path] || (article ? '文章阅读' : collection ? '学习专题' : '页面不存在'))
   const description = entry?.description || (admin ? '个人网站的内容写作与管理工作台。' : descriptions[route.path] || (article ? '阅读公开笔记、心得与生活记录。' : '这个页面不存在，可以返回首页继续浏览。'))
   return { title: `${String(title).replace(/\s+/g, ' ').trim().slice(0, 100)} · ${siteProfile.siteName}`, description: String(description).replace(/\s+/g, ' ').trim().slice(0, 180), robots: admin || !known || entry?.noIndex ? 'noindex, nofollow' : 'index, follow' }
 }

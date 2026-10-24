@@ -45,24 +45,34 @@ export function archiveQuery(query = {}) {
     return result
 }
 
-const isList = path => ['/', '/topics', '/archive', '/diary'].includes(path)
+const isCollection = path => /^\/collections\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(path)
+const isList = path => ['/', '/articles', '/topics', '/archive', '/diary'].includes(path) || isCollection(path)
+
+// 第二版的首页筛选链接继续有效；裸 / 留给新首页。
+export function legacyListLocation(to) {
+    if (to.path === '/' && (['type', 'categoryId', 'tagId', 'keyword', 'page'].some(key => Object.hasOwn(to.query ?? {}, key)) || listHash(to.hash))) {
+        return { path: '/articles', query: listQuery(to.query), hash: listHash(to.hash), replace: true }
+    }
+}
 export function pageQuery(path, query) {
+    if (path === '/' || path === '/projects' || isCollection(path)) return {}
     if (path === '/topics') return topicQuery(query)
     if (path === '/archive' || path === '/diary') return archiveQuery(query)
     return listQuery(query)
 }
-// 首页已有调用只传query；缺少path时继续按首页处理。
-export const listKey = route => (['/topics', '/archive', '/diary'].includes(route.path) ? route.path.slice(1) + '?' : '')
-    + new URLSearchParams(pageQuery(route.path, route.query)).toString()
+// 每种列表使用独立位置键；未传path的旧调用按文章库处理。
+export const listKey = route => (route.path ?? '/articles') + '?' + new URLSearchParams(pageQuery(route.path, route.query)).toString()
 export const listHash = hash => ['#entries', '#article-search'].includes(hash) ? hash : ''
-export const pageHash = (path, hash) => path === '/' ? listHash(hash) : (hash === '#entries' ? hash : '')
+export const pageHash = (path, hash) => path === '/articles' ? listHash(hash) : (hash === '#entries' ? hash : '')
 
-// 正文的返回地址只允许本站首页、主题、归档和日记页。外部地址、其他页面和异常参数回退。
+// 正文的返回地址只允许本站首页、文章库、专题、主题、归档和日记页。外部地址、其他页面和异常参数回退。
 export function listReturn(raw) {
     if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return { path: '/' }
     try {
         const url = new URL(raw, 'https://list.invalid')
-        if (url.origin !== 'https://list.invalid' || !isList(url.pathname)) return { path: '/' }
+        if (url.origin !== 'https://list.invalid' || (!isList(url.pathname) && url.pathname !== '/projects')) return { path: '/' }
+        const legacy = legacyListLocation({path: url.pathname, query: Object.fromEntries(url.searchParams), hash: url.hash})
+        if (legacy) return {path: legacy.path, query: legacy.query, hash: legacy.hash}
         return { path: url.pathname, query: pageQuery(url.pathname, Object.fromEntries(url.searchParams)),
             hash: pageHash(url.pathname, url.hash) }
     } catch {

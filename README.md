@@ -4,15 +4,19 @@
 
 ## 当前版本
 
-当前候选预发布 **v2.0.0-rc.1**（2026-10-23），构建版本为 **2.0.0-rc.1**；目标正式版仍为v2.0.0。此前v0.7.0～v0.12.0为分阶段预发布，原拟v0.13.0的恢复加固并入本次RC。
+当前阶段预发布 **v3.0.0-alpha.1**（2026-10-24），前后端构建版本均为 **3.0.0-alpha.1**。它包含第三版第二轮业务接入；第三版RC/正式版及云部署尚未完成。上一版为v2.0.0-rc.1，第二版正式v2.0.0尚未发布。
 
-[RC发布说明](docs/RELEASE-v2.0.0-rc.1.md) · [正式版说明草稿](docs/RELEASE-v2.0.0.md) · [发布准备与待办](docs/V2-RELEASE-READINESS.md) · [整站验收](docs/V2-FINAL-ACCEPTANCE.md) · [项目历史](docs/PROJECT-PROGRESS.md)
+[第三版Alpha发布说明](docs/RELEASE-v3.0.0-alpha.1.md) · [上一版RC说明](docs/RELEASE-v2.0.0-rc.1.md) · [正式版说明草稿](docs/RELEASE-v2.0.0.md) · [发布准备与待办](docs/V2-RELEASE-READINESS.md) · [整站验收](docs/V2-FINAL-ACCEPTANCE.md) · [项目历史](docs/PROJECT-PROGRESS.md)
 
 整站技术验收：前端74项、专用MySQL后端32项、恢复工具5项，64组四档宽度和桌面Edge复核，以及新安装、升级、数据库与媒体恢复通过。用户已认可暗色风格；实体手机按用户要求暂缓，作为未验证限制保留；正式内容草稿待审阅。GitHub资料已成功刷新；云部署另行规划。
 
 ## 功能
 
-- 置顶/封面首页，Markdown正文、目录、代码高亮/复制、阅读进度、图片查看和连续阅读。
+开发进度：[第三版差距核对与改进计划](docs/V3-IMPROVEMENT-PLAN.md)。工作区已完成第三版第二轮：首页与文章库拆分、旧链接兼容、精选和学习专题、项目案例与关联笔记。本轮纳入v3.0.0-alpha.1预发布；前端82项、真实MySQL36项及两端构建通过，发布复检再次通过前端82项和公开配置JAR打包，无需SQL迁移。
+
+第三版第一轮[独立交互样稿](docs/design-v3/README.md)继续用于设计对照，端口5188；真实业务按通常方式启动前后端。第二轮配置、升级和验收见[内容组织指南](docs/32-v3-content-organization.md)和[验收报告](docs/V3-ROUND2-ACCEPTANCE.md)。无需新增SQL，精选与专题默认留空，不会自动发布个人草稿。
+
+- 独立首页和文章库、精选、学习专题顺序阅读、项目实践笔记；置顶/封面、Markdown正文、目录、代码高亮/复制、阅读进度、图片查看和连续阅读。
 - 分类/多标签、搜索、分页、归档、公开精选日记、资源分组及个人项目展示。
 - 独立管理员工作台，草稿/发布/撤回/回收/恢复、编辑预览、未保存保护。
 - 本地图片校验和公开隔离，数据库/源码配置/媒体离线备份与恢复失败回滚。
@@ -136,7 +140,7 @@ python -m unittest discover -s scripts/tests -v
 npm.cmd --prefix frontend run build
 ```
 
-后端测试需要已初始化000～007的独立真实MySQL库。配置DB_URL到 `pw_v2admin_acceptance_` 开头的专用库；应用账号只给该库读写权限，不允许访问个人库。再进入personalwebsite运行 `.\mvnw.cmd test`。测试会写入数据、自增编号可能前进，不能对个人内容库执行。常规src/test有23项；整站32项还包含docs/checks中的9项导航、主题及时间线专项，执行范围见整站验收报告。
+后端测试需要已初始化000～007的独立真实MySQL库。配置DB_URL到 `pw_v2admin_acceptance_` 开头的专用库；应用账号只给该库读写权限，不允许访问个人库。再进入personalwebsite运行 `.\mvnw.cmd test`。测试会写入数据、自增编号可能前进，不能对个人内容库执行。当前常规src/test有27项；第三版第二轮36项还包含docs/checks中的9项导航、主题及时间线专项，执行范围见docs/V3-ROUND2-ACCEPTANCE.md。
 
 发布JAR必须在不含真实配置的干净副本打包，将示例配置复制为application.properties后使用环境变量。执行 `.\mvnw.cmd -DskipTests package` 得到 `target/personalwebsite-2.0.0-rc.1.jar`；此命令跳过测试，不能作为测试通过的依据。前端dist需使用HTTP服务、SPA页面回退及同源/api代理；API错误不能回退成HTML。
 

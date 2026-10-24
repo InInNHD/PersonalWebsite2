@@ -18,11 +18,11 @@ const settle=async()=>{for(let i=0;i<12;i++) await nextTick()}
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject}}
 function list(initialQuery,fetch){
   const nav=navigation(), cleanup=[], history=[]
-  const route=reactive({path:'/',query:initialQuery,hash:'',fullPath:'/',matched:[{}]})
+  const route=reactive({path:'/articles',query:initialQuery,hash:'',fullPath:'/articles',matched:[{}]})
   let app
   const update=async(target,replace)=>{
     const query=nav.listQuery(target.query)
-    const next={path:'/',query,hash:target.hash??'',fullPath:'/?'+new URLSearchParams(query)+(target.hash??'')}
+    const next={path:'/articles',query,hash:target.hash??'',fullPath:'/articles?'+new URLSearchParams(query)+(target.hash??'')}
     const previous={...route}
     nav.prepareList(next,previous)
     Object.assign(route,next)
@@ -32,7 +32,7 @@ function list(initialQuery,fetch){
   const router={push:t=>update(t,false),replace:t=>update(t,true)}
   const script=parse(code('views/ArticleListView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
   const scope=effectScope()
-  const bindings={ref,computed,watch,onBeforeUnmount:f=>cleanup.push(f),onMounted:()=>{},onBeforeRouteLeave:()=>{},useRoute:()=>route,useRouter:()=>router,fetch,window:{scrollX:0,scrollY:100},...nav}
+  const bindings={compactArticles:ref(false),ref,computed,watch,onBeforeUnmount:f=>cleanup.push(f),onMounted:()=>{},onBeforeRouteLeave:()=>{},useRoute:()=>route,useRouter:()=>router,fetch,window:{scrollX:0,scrollY:100},...nav}
   scope.run(()=>{app=new Function(...Object.keys(bindings),`${script};return {type,categoryId,tagId,keyword,keywordInput,page,totalPages,articles,error,loading,selectType,selectCategory,searchArticles,clearSearch,clearAll,changePage,loadArticles}`)(...Object.values(bindings))})
   return {...app,route,router,history,leave:()=>{cleanup.forEach(fn=>fn());scope.stop()}}
 }
@@ -44,7 +44,7 @@ test('网址参数规范化并保留Long字符串，站外返回地址回退',()
   assert.deepEqual(n.listQuery({page:'1',keyword:' '}),{})
   assert.equal(n.listQuery({keyword:'字'.repeat(101)}).keyword.length,100)
   for(const bad of ['https://example.com','//example.com','/\\example.com','/admin','/articles/1',null,['/?page=2']]) assert.deepEqual(n.listReturn(bad),{path:'/'})
-  assert.deepEqual(n.listReturn('/?type=NOTE&page=2&unknown=1#entries'),{path:'/',query:{type:'NOTE',page:'2'},hash:'#entries'})
+  assert.deepEqual(n.listReturn('/?type=NOTE&page=2&unknown=1#entries'),{path:'/articles',query:{type:'NOTE',page:'2'},hash:'#entries'})
 })
 
 test('实际四个Vue组件可编译',()=>{
@@ -104,7 +104,7 @@ test('切换网址后旧响应不能覆盖新列表，失败可重试且卸载�
 })
 
 test('滚动等待列表完成，优先浏览器保存位置，正文返回恢复记录',async()=>{
-  const n=navigation(),to={path:'/',query:{page:'2'},hash:'#entries',fullPath:'/?page=2#entries'}
+  const n=navigation(),to={path:'/articles',query:{page:'2'},hash:'#entries',fullPath:'/articles?page=2#entries'}
   const from={path:'/articles/1',query:{from:'/?page=2#entries'}}
   n.rememberList(to,{left:0,top:1234});n.prepareList(to,from)
   let completed=false
@@ -112,16 +112,16 @@ test('滚动等待列表完成，优先浏览器保存位置，正文返回恢�
   await settle();assert.equal(completed,false)
   await n.finishList(n.listKey(to));assert.deepEqual(await waiting,{left:0,top:999})
   assert.deepEqual(await n.listScroll(to,from,null,()=>to),{left:0,top:1234})
-  const fresh={path:'/',query:{page:'3'},hash:'',fullPath:'/?page=3'}
+  const fresh={path:'/articles',query:{page:'3'},hash:'',fullPath:'/articles?page=3'}
   n.prepareList(fresh,from);await n.finishList(n.listKey(fresh))
   assert.deepEqual(await n.listScroll(fresh,{path:'/articles/1',query:{from:'/?page=3'}},null,()=>fresh),{el:'#entries',top:24})
 })
 
 test('首次加载必须等待；离开页面释放等待且旧滚动不影响新页面',async()=>{
-  const n=navigation(),to={path:'/',query:{},hash:'#entries',fullPath:'/#entries'}
-  n.prepareList(to,{path:'/',query:{},matched:[]})
+  const n=navigation(),to={path:'/articles',query:{},hash:'#entries',fullPath:'/#entries'}
+  n.prepareList(to,{path:'/articles',query:{},matched:[]})
   let complete=false,current=to
-  const waiting=n.listScroll(to,{path:'/',query:{}},null,()=>current).then(value=>{complete=true;return value})
+  const waiting=n.listScroll(to,{path:'/articles',query:{}},null,()=>current).then(value=>{complete=true;return value})
   await settle();assert.equal(complete,false)
   current={path:'/about',fullPath:'/about'};n.prepareList(current,to)
   assert.equal(await waiting,false)

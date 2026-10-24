@@ -14,11 +14,11 @@ function code(file){return readFileSync(new URL(`../${file}`,import.meta.url),'u
 const profile=()=>new Function(code('src/siteProfile.js').replace('export const','const')+';return siteProfile')()
 const response=(value,status=200,next=false)=>new Response(JSON.stringify(value),{status,headers:next?{link:'<https://api.github.com/next>; rel="next"'}:{}})
 const snapshot=()=>({schemaVersion:1,owner:'InInNHD',syncedAt:'2026-10-20T08:00:00Z',projects:[{id:'1',name:'Alpha',fullName:'InInNHD/Alpha',description:'<script>alert(1)</script>',language:'Java',url:'https://github.com/InInNHD/Alpha',pushedAt:'2026-10-20T00:00:00Z'},{id:'2',name:'Beta',fullName:'InInNHD/Beta',description:'demo',language:'TypeScript',url:'https://github.com/InInNHD/Beta',pushedAt:null}],events:Array.from({length:12},(_,i)=>({id:String(i),repo:i===11?'InInNHD/Beta':'InInNHD/Alpha',kind:i===0?'RELEASE':i===1?'PUSH':'COMMIT',title:i===0?'<b>release</b>':'change '+i,url:'https://github.com/InInNHD/Alpha/commit/'+i,date:'2026-10-19T16:30:00Z',prerelease:i===0}))})
-function about(fetch,details=profile()){
+function about(fetch,details=profile(),projectPage=false){
   const leaves=[],mounted=[]
-  const bindings={ref,computed,nextTick,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),siteProfile:details,fetch}
+  const bindings={usePresentation:()=>({presentation:ref(null),presentationError:ref(''),loadPresentation:async()=>{}}),defineProps:()=>({projectPage}),ref,computed,nextTick,onMounted:fn=>mounted.push(fn),onBeforeUnmount:fn=>leaves.push(fn),siteProfile:details,fetch}
   const script=parse(code('src/views/AboutView.vue')).descriptor.scriptSetup.content.replace(/^import[^\n]*\n/gm,'')
-  const state=new Function(...Object.keys(bindings),script+';return {siteProfile,snapshot,loading,error,repository,kind,page,updatesTitle,externalLink,githubLink,directions,experiences,contacts,projects,languages,eventNames,filteredEvents,totalPages,visibleEvents,dateText,timeText,loadProjects,resetPage,changePage,showUpdates}')(...Object.values(bindings))
+  const state=new Function(...Object.keys(bindings),script+';return {props,caseProject,presentation,presentationError,loadPresentation,siteProfile,snapshot,loading,error,repository,kind,page,updatesTitle,externalLink,githubLink,directions,experiences,contacts,projects,languages,eventNames,filteredEvents,totalPages,visibleEvents,dateText,timeText,loadProjects,resetPage,changePage,showUpdates}')(...Object.values(bindings))
   return {...state,leave:()=>leaves.forEach(fn=>fn())}
 }
 async function html(state){
@@ -52,6 +52,16 @@ test('项目与类型筛选、分页边界、查看更新定位及北京时间',
   const calls=[];state.updatesTitle.value={focus:()=>calls.push('focus'),scrollIntoView:()=>calls.push('scroll')}
   await state.showUpdates('InInNHD/Alpha');assert.equal(state.kind.value,'');assert.equal(state.page.value,1);assert.deepEqual(calls,['focus','scroll'])
   assert.match(state.dateText('2026-10-19T16:30:00Z'),/2026.*10.*20/);assert.equal(state.timeText('2026-10-19T16:30:00Z'),'00:30')
+})
+
+test('独立项目页突出本站案例，同时保留全部仓库及三类事件，关于页不显示案例首屏',async()=>{
+  const data=snapshot();data.projects.push({id:'3',name:'PersonalWebsite2',fullName:'InInNHD/PersonalWebsite2',description:'本站',language:'Vue',url:'https://github.com/InInNHD/PersonalWebsite2',pushedAt:null,fork:false})
+  const state=about(async()=>response(data),profile(),true);await state.loadProjects()
+  const rendered=await html(state)
+  assert.match(rendered,/id="case-title"/);assert.doesNotMatch(rendered,/id="about-title"/)
+  assert.equal(state.projects.value.length,3);assert.equal(state.filteredEvents.value.length,12)
+  assert.deepEqual(new Set(data.events.map(item=>item.kind)),new Set(['RELEASE','PUSH','COMMIT']))
+  const old=about(async()=>response(data));await old.loadProjects();assert.doesNotMatch(await html(old),/id="case-title"/)
 })
 test('快照失败/格式错误/空结果与重试；卸载和旧JSON解析不覆盖新结果',async()=>{
   let value={},status=503

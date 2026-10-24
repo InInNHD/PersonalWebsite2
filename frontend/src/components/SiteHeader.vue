@@ -5,7 +5,7 @@ import { siteProfile } from '../siteProfile.js'
 
 const route = useRoute()
 // 在首页点击文章/搜索入口时保留条件；其他页面进入时使用全部文章。
-const homeQuery = computed(() => route.path === '/' ? route.query : {})
+const homeQuery = computed(() => route.path === '/articles' ? route.query : {})
 const menuOpen = ref(false)
 const menuButton = ref(null)
 function closeMenu(returnFocus = false) { menuOpen.value = false; if (returnFocus) menuButton.value?.focus() }
@@ -21,11 +21,9 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
     </RouterLink>
     <nav id="visitor-nav" class="v2-nav" :class="{ open: menuOpen }" aria-label="网站导航"
          @click="closeMenu()" @keydown.esc.stop.prevent="closeMenu(true)">
-      <RouterLink to="/" exact-active-class="v2-exact" :class="{ 'is-active': route.path === '/' && route.hash !== '#entries' }"
-                  :aria-current="route.path === '/' && route.hash !== '#entries' ? 'page' : null">首页</RouterLink>
-      <RouterLink :to="{ path: '/', query: homeQuery, hash: '#entries' }" exact-active-class="v2-exact"
-                  :class="{ 'is-active': (route.path === '/' && route.hash === '#entries') || route.path.startsWith('/articles/') }"
-                  :aria-current="route.path === '/' && route.hash === '#entries' ? 'location' : null">文章</RouterLink>
+      <RouterLink to="/" :class="{ 'is-active': route.path === '/' }" :aria-current="route.path === '/' ? 'page' : null">首页</RouterLink>
+      <RouterLink :to="{ path: '/articles', query: homeQuery }" :class="{ 'is-active': route.path.startsWith('/articles') }">文章</RouterLink>
+      <RouterLink to="/projects">项目</RouterLink>
       <RouterLink to="/topics">主题</RouterLink>
       <RouterLink to="/archive">归档</RouterLink>
       <RouterLink to="/diary">日记</RouterLink>
@@ -33,7 +31,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <RouterLink to="/about">关于</RouterLink>
     </nav>
     <div class="v2-header-tools">
-      <RouterLink class="v2-icon-button" :to="{ path: '/', query: homeQuery, hash: '#article-search' }" aria-label="搜索文章">
+      <RouterLink class="v2-icon-button" :to="{ path: '/articles', query: homeQuery, hash: '#article-search' }" aria-label="搜索文章">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>
       </RouterLink>
       <button ref="menuButton" class="v2-icon-button v2-menu" type="button" aria-controls="visitor-nav"

@@ -1,18 +1,16 @@
 <script setup>
 import PageState from '../components/PageState.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { siteProfile } from '../siteProfile.js'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { finishList, listKey, listQuery, rememberList } from '../listNavigation.js'
 import ArticleCard from '../components/ArticleCard.vue'
-import SiteStats from '../components/SiteStats.vue'
-import ProfileAvatar from '../components/ProfileAvatar.vue'
 import ArticlePagination from '../components/ArticlePagination.vue'
-import heroArt from '../assets/hero.svg'
+import { compactArticles } from '../articleDisplay.js'
 
 const route = useRoute()
 const router = useRouter()
 const filtersExpanded = ref(false)
+const compact = compactArticles
 // 从页头搜索入口进入时，自动打开筛选区，保证锚点目标可见。
 const showFilters = computed(() => filtersExpanded.value || route.hash === '#article-search')
 
@@ -35,7 +33,7 @@ const pageSize = 10
 const total = ref(0)
 const totalPages = ref(0)
 
-// 离开首页时记录当前查询对应的滚动位置，供正文中的返回链接使用。
+// 离开文章库时记录当前查询对应的滚动位置，供正文中的返回链接使用。
 onBeforeRouteLeave(() => {
   rememberList(route, { left: window.scrollX, top: window.scrollY })
 })
@@ -89,7 +87,7 @@ async function loadArticles() {
     // 内容减少时，后端可能把超出末页的请求纠正到末页。
     // 同步修正网址，replace避免把错误页码留在历史中。
     if (data.page !== Number(route.query.page ?? 1)) {
-      await router.replace({ path: '/', query: listQuery({ ...route.query, page: data.page }), hash: route.hash })
+      await router.replace({ path: '/articles', query: listQuery({ ...route.query, page: data.page }), hash: route.hash })
     }
   } catch (cause) {
     if (requestId !== latestRequestId) return
@@ -110,7 +108,7 @@ async function navigateList() {
   const query = listQuery({ type: type.value, categoryId: categoryId.value,
     tagId: tagId.value, keyword: keyword.value, page: page.value })
   const sameQuery = listKey({ query }) === listKey(route)
-  await router.push({ path: '/', query, hash: '#entries' })
+  await router.push({ path: '/articles', query, hash: '#entries' })
   // 相同条件再次点搜索时watch不会触发，允许主动重新加载。
   if (sameQuery) return loadArticles()
 }
@@ -139,7 +137,7 @@ function changePage(nextPage) {
   return navigateList()
 }
 
-// 首页只展示被公开文章使用的分类和标签；管理端保留原全量接口。
+// 文章库只展示被公开文章使用的分类和标签；管理端保留原全量接口。
 async function loadTopics() {
   if (topicLoading.value || disposed) return
   topicLoading.value = true
@@ -204,29 +202,13 @@ function clearAll() {
 </script>
 
 <template>
-  <div class="v2-home">
-    <section class="v2-hero" aria-labelledby="home-title">
-      <div class="v2-hero-text">
-        <p class="v2-eyebrow">A PERSONAL NOTEBOOK, ALWAYS GROWING</p>
-        <h1 id="home-title">{{ siteProfile.heroTitle }}<br><span>{{ siteProfile.heroAccent }}</span></h1>
-        <p class="v2-hero-copy">你好，我是 {{ siteProfile.nickname }}。<br>{{ siteProfile.heroDescription }}</p>
-        <div class="v2-hero-actions">
-          <a class="v2-action primary" href="#entries" @click.prevent="selectType('NOTE')">阅读笔记 →</a>
-          <RouterLink class="v2-action" to="/diary">浏览日记</RouterLink>
-        </div>
-        <p class="v2-hero-sign">LEARN SOMETHING. KEEP A LITTLE LIGHT.</p>
-      </div>
-      <figure class="v2-hero-art">
-        <img :src="heroArt" alt="打开的笔记终端与萤火轨迹" width="530" height="400">
-        <figcaption>FIREFLY LAB / SKETCH 001</figcaption>
-      </figure>
-    </section>
-
-    <div class="v2-content">
+  <div class="v3-library">
+    <header class="v3-page-heading"><p class="v2-eyebrow">LIBRARY / FIELD NOTES</p><h1>文章库</h1><p>按栏目、分类与标签，找到此刻想读的一篇。</p></header>
+    <div class="v3-library-content">
       <section id="entries" aria-labelledby="entries-title" :aria-busy="loading">
         <header class="v2-entry-heading">
-          <h2 id="entries-title">最近的记录<span>.</span></h2>
-          <small v-if="!loading && !error" role="status">共 {{ total }} 篇文章</small>
+          <h2 id="entries-title">所有公开文章<span>.</span></h2>
+          <small v-if="!loading && !error" role="status">共 {{ total }} 篇文章</small><button type="button" class="v2-type" :aria-pressed="compact" @click="compact = !compact">紧凑列表</button>
         </header>
         <div class="v2-content-tools" role="group" aria-label="文章栏目">
           <button v-for="option in typeOptions" :key="option.value" type="button" class="v2-type"
@@ -274,36 +256,14 @@ function clearAll() {
         <PageState v-else-if="error" kind="error" heading="h3" title="内容暂时没能加载" :message="error" retry-label="重新加载文章" @retry="loadArticles" />
         <PageState v-else-if="articles.length === 0 && (type || categoryId || tagId || keyword)" heading="h3" title="暂时没有找到记录" message="当前搜索或筛选条件下没有已发布的文章。" retry-label="清空全部条件" @retry="clearAll" />
         <PageState v-else-if="articles.length === 0" heading="h3" title="第一篇公开记录，还在路上" message="笔记与生活会慢慢整理到这里。也可以先看看资源与个人介绍。"><RouterLink class="v2-action" to="/resources">浏览资源 →</RouterLink><RouterLink class="v2-action" to="/about">关于作者 →</RouterLink></PageState>
-        <div v-else class="v2-grid">
-          <ArticleCard v-for="(article, index) in articles" :key="article.id" :article="article"
-                       :featured="page === 1 && index === 0" :return-to="route.fullPath" />
+        <div v-else class="v2-grid" :class="{ compact }">
+          <ArticleCard v-for="article in articles" :key="article.id" :article="article"
+                       :featured="false" :return-to="route.fullPath" />
         </div>
         <ArticlePagination v-if="!error" :page="page" :total-pages="totalPages" :loading="loading" @change="changePage" />
       </section>
 
-      <aside class="v2-sidebar" aria-label="作者与内容导航">
-        <section class="v2-profile">
-          <ProfileAvatar class="v2-avatar" />
-          <h2>{{ siteProfile.nickname }}</h2>
-          <span class="v2-eyebrow">LEARNING IN PUBLIC</span>
-          <p>{{ siteProfile.profileDescription }}</p>
-          <SiteStats />
-          <div class="v2-profile-links">
-            <a v-if="siteProfile.githubUrl" :href="siteProfile.githubUrl" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
-            <RouterLink to="/about">关于我 →</RouterLink>
-          </div>
-        </section>
-        <section class="v2-side-links">
-          <h3>在这里探索</h3>
-          <RouterLink to="/topics">分类与标签 <span aria-hidden="true">→</span></RouterLink>
-          <a v-for="category in articleCategories" :key="category.id" href="#entries"
-             @click.prevent="selectCategory(category.id)">{{ category.name }} <span aria-hidden="true">→</span></a>
-          <RouterLink to="/archive">浏览归档 <span aria-hidden="true">→</span></RouterLink>
-          <RouterLink to="/diary">公开日记 <span aria-hidden="true">→</span></RouterLink>
-          <RouterLink to="/resources">资源收藏 <span aria-hidden="true">→</span></RouterLink>
-        </section>
-        <p class="v2-side-note">不必一次照亮整条路，<br>记住今天走过的这一段。</p>
-      </aside>
+
     </div>
   </div>
 </template>

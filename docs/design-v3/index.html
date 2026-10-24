@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark">
+  <title>萤火手记 · 第三版交互样稿</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='9' fill='%23131e1d'/%3E%3Ctext x='13' y='30' fill='%23c1daba' font-family='Georgia' font-size='32'%3Ef%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">跳到内容</a>
+  <div class="review-bar"><span><b>V3 / 01</b> 交互样稿 <span class="review-note">· 演示文章，不代表已发布内容</span></span><button id="compare" type="button">对照第二版结构</button></div>
+  <div id="app"></div>
+  <dialog id="search-dialog" aria-labelledby="search-title"><form id="global-search"><div class="dialog-head"><h2 id="search-title">找一段记录</h2><button type="button" data-close aria-label="关闭搜索">✕</button></div><label for="global-query">搜索演示文章的标题、摘要或正文</label><div class="search-line"><input id="global-query" name="q" type="search" maxlength="100" placeholder="试试「事务」或「恢复」" autocomplete="off"><button class="primary">搜索</button></div><p class="muted">按 Enter 搜索 · Esc 关闭</p></form></dialog>
+  <dialog id="info-dialog" aria-labelledby="info-title"><div class="dialog-head"><h2 id="info-title"></h2><button type="button" data-close aria-label="关闭详情">✕</button></div><div id="info-body"></div></dialog>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <script type="module" src="prototype.js"></script>
+</body>
+</html>

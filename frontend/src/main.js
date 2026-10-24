@@ -1,13 +1,16 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { listScroll, pageHash, pageQuery, prepareList } from './listNavigation.js'
+import { legacyListLocation, listScroll, pageHash, pageQuery, prepareList } from './listNavigation.js'
 import { prepareReading, readingScroll } from './readingNavigation.js'
 import App from './App.vue'
+import HomeView from './views/HomeView.vue'
+import CollectionView from './views/CollectionView.vue'
 import ArticleListView from './views/ArticleListView.vue'
 import ArticleDetailView from './views/ArticleDetailView.vue'
 import './style.css'
 // 新配色和布局覆盖基础样式，顺序不能反过来。
 import './v2.css'
+import './v3.css'
 import AdminArticleEditorView from './views/AdminArticleEditorView.vue'
 import AdminTaxonomyView from './views/AdminTaxonomyView.vue'
 import AdminResourceView from './views/AdminResourceView.vue'
@@ -22,7 +25,7 @@ import AboutView from './views/AboutView.vue'
 import TopicView from './views/TopicView.vue'
 import NotFoundView from './views/NotFoundView.vue'
 
-// 首页显示文章列表；点击文章后通过 id 打开详情。
+// 首页、文章库和专题独立；文章详情地址继续兼容第二版。
 const router = createRouter({
     history: createWebHistory(),
     // 首页等待列表渲染完成，再执行浏览器后退或正文返回的位置恢复。
@@ -33,7 +36,10 @@ const router = createRouter({
         return listScroll(to, from, savedPosition, () => router.currentRoute.value)
     },
     routes: [
-        { path: '/', component: ArticleListView },
+        { path: '/', component: HomeView },
+        { path: '/articles', component: ArticleListView },
+        { path: '/collections/:slug', component: CollectionView },
+        { path: '/projects', component: AboutView, props: { projectPage: true } },
         { path: '/articles/:id', component: ArticleDetailView },
         { path: '/topics', component: TopicView },
         { path: '/archive', component: ArchiveView },
@@ -59,7 +65,9 @@ const router = createRouter({
 
 // 非法值、重复参数和未知参数统一清理；replace不额外增加浏览器历史。
 router.beforeEach(to => {
-    if (!['/', '/topics', '/archive', '/diary'].includes(to.path)) return
+    const legacy = legacyListLocation(to)
+    if (legacy) return legacy
+    if (!['/', '/articles', '/topics', '/archive', '/diary'].includes(to.path) && !to.path.startsWith('/collections/')) return
     const query = pageQuery(to.path, to.query)
     const hash = pageHash(to.path, to.hash)
     if (JSON.stringify(to.query) !== JSON.stringify(query) || to.hash !== hash) {

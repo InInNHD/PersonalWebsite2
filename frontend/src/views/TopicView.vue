@@ -1,4 +1,6 @@
 <script setup>
+import LearningPaths from '../components/LearningPaths.vue'
+import { usePresentation } from '../usePresentation.js'
 import PageState from '../components/PageState.vue'
 import { usePageMeta } from '../pageMeta.js'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -7,6 +9,7 @@ import { finishList, listKey, rememberList, topicQuery } from '../listNavigation
 import ArticleCard from '../components/ArticleCard.vue'
 import ArticlePagination from '../components/ArticlePagination.vue'
 
+const { presentation, presentationError, loadPresentation } = usePresentation()
 const route = useRoute()
 const router = useRouter()
 const directory = ref(null)
@@ -87,7 +90,8 @@ async function loadDirectory() {
   articles.value = []
   loading.value = false
   try {
-    const response = await fetch('/api/topics', { signal: AbortSignal.timeout(15000) })
+    // 两块内容都就绪后再恢复滚动，避免专题插入后把原位置推走。
+    const [response] = await Promise.all([fetch('/api/topics', { signal: AbortSignal.timeout(15000) }), loadPresentation()])
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const data = await response.json()
     if (disposed || requestId !== latestDirectoryId) return
@@ -120,6 +124,8 @@ onMounted(loadDirectory)
       <p class="v2-eyebrow">EXPLORE / FIELD NOTES</p><h1>内容地图</h1>
       <p>沿着一个分类，或一枚标签，找到值得继续阅读的记录。</p>
     </header>
+    <LearningPaths v-if="presentation" :collections="presentation.collections" />
+    <PageState v-if="presentationError" compact kind="error" title="学习专题暂不可用" :message="presentationError" retry-label="重试学习专题" @retry="loadPresentation" />
     <PageState v-if="directoryLoading" kind="loading" title="正在整理公开主题…" />
     <PageState v-else-if="directoryError" kind="error" title="主题目录暂时没能加载" :message="directoryError" retry-label="重新加载主题" @retry="loadDirectory" />
     <template v-else-if="directory">

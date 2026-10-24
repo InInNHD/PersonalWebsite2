@@ -9,6 +9,8 @@ const year = new Date().getFullYear()
     <nav aria-label="页脚导航">
       <span>© {{ year }}</span>
       <a v-if="siteProfile.githubUrl" :href="siteProfile.githubUrl" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <RouterLink to="/articles">文章库</RouterLink>
+      <RouterLink to="/projects">项目</RouterLink>
       <RouterLink to="/admin">内容管理</RouterLink>
     </nav>
   </footer>

@@ -4,7 +4,12 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { siteProfile } from '../siteProfile.js'
 import ProfileAvatar from '../components/ProfileAvatar.vue'
 import ArticlePagination from '../components/ArticlePagination.vue'
+import { usePresentation } from '../usePresentation.js'
 
+const props = defineProps({ projectPage: { type: Boolean, default: false } })
+const { presentation, presentationError, loadPresentation } = usePresentation()
+onMounted(loadPresentation)
+const caseProject = computed(() => projects.value.find(item => item.fullName === `${siteProfile.githubName}/PersonalWebsite2` && !item.fork))
 const snapshot = ref(null)
 const loading = ref(false)
 const error = ref('')
@@ -87,7 +92,7 @@ onMounted(loadProjects)
 
 <template>
   <div class="about-v2">
-    <section class="about-intro" aria-labelledby="about-title">
+    <section v-if="!props.projectPage" class="about-intro" aria-labelledby="about-title">
       <div class="about-portrait"><ProfileAvatar /><p>FIREFLY / FIELD NOTES</p><span class="about-portrait-copy">{{ siteProfile.profileDescription }}</span></div>
       <div class="about-introduction">
         <p class="v2-eyebrow">ABOUT / BEHIND THE NOTES</p>
@@ -96,15 +101,28 @@ onMounted(loadProjects)
         <p v-for="(paragraph, index) in siteProfile.aboutParagraphs" :key="index">{{ paragraph }}</p>
         <div class="about-actions">
           <a v-if="githubLink" :href="githubLink" target="_blank" rel="noopener noreferrer">{{ siteProfile.githubName || 'GitHub' }} ↗</a>
-          <RouterLink to="/diary">公开日记 →</RouterLink><RouterLink to="/topics">内容地图 →</RouterLink>
+          <RouterLink to="/projects">项目案例 →</RouterLink><RouterLink to="/diary">公开日记 →</RouterLink><RouterLink to="/topics">内容地图 →</RouterLink>
         </div>
       </div>
     </section>
 
-    <section v-if="directions.length" class="about-section" aria-labelledby="about-learning">
+    <section v-if="!props.projectPage && directions.length" class="about-section" aria-labelledby="about-learning">
       <p class="v2-eyebrow">LEARNING / IN PROGRESS</p><h2 id="about-learning">正在学习</h2>
       <div class="about-grid"><article v-for="item in directions" :key="item.title" class="about-info-card"><h3>{{ item.title }}</h3><p v-if="item.description">{{ item.description }}</p></article></div>
     </section>
+
+    <template v-if="props.projectPage">
+      <header class="v3-page-heading"><p class="v2-eyebrow">PROJECTS / LEARNING BY BUILDING</p><h1>把想法写成可以运行的东西。</h1><p>项目案例、公开仓库，以及每一步留下的更新记录。</p></header>
+      <article v-if="caseProject" class="v3-case" aria-labelledby="case-title">
+        <div><p class="v2-eyebrow">FEATURED PROJECT / PERSONAL WEBSITE</p><h2 id="case-title">PersonalWebsite2</h2><p>一个用于存放笔记、心得、公开日记与资源的个人网站。</p><div class="v3-actions"><a :href="externalLink(caseProject.url)" target="_blank" rel="noopener noreferrer">查看源码 ↗</a><button type="button" @click="showUpdates(caseProject.fullName)">查看迭代记录 →</button></div></div>
+        <dl><div><dt>要解决的问题</dt><dd>让写作、整理与阅读形成完整流程，草稿保留在管理端。</dd></div><div><dt>实现与取舍</dt><dd>Vue 与 Spring Boot 分离，MySQL 保存内容；先做好文章、媒体和备份恢复。</dd></div><div><dt>持续改进</dt><dd>从功能可用走向清晰的内容入口与连续阅读；部署和真实设备体验仍需单独验证。</dd></div></dl>
+      </article>
+      <section v-if="caseProject && presentation?.projectArticles.length" class="v3-project-reading" aria-labelledby="project-reading">
+        <h2 id="project-reading">项目实践笔记</h2><p>从具体问题回看实现过程。</p>
+        <ul><li v-for="article in presentation.projectArticles" :key="article.id"><RouterLink :to="{path: `/articles/${article.id}`, query: {from: '/projects'}}">{{ article.title }} →</RouterLink></li></ul>
+      </section>
+      <PageState v-if="presentationError" compact kind="error" title="实践笔记暂不可用" :message="presentationError" retry-label="重试实践笔记" @retry="loadPresentation" />
+    </template>
 
     <section class="about-section" aria-labelledby="about-projects">
       <header class="about-section-heading"><div><p class="v2-eyebrow">BUILD / IN PUBLIC</p><h2 id="about-projects">公开项目</h2></div><span v-if="snapshot">{{ projects.length }} 个项目</span></header>
@@ -147,11 +165,11 @@ onMounted(loadProjects)
       <ArticlePagination aria-label="更新分页" :page="page" :total-pages="totalPages" :loading="false" @change="changePage" />
     </section>
 
-    <section v-if="experiences.length" class="about-section" aria-labelledby="about-experiences">
+    <section v-if="!props.projectPage && experiences.length" class="about-section" aria-labelledby="about-experiences">
       <p class="v2-eyebrow">MILESTONES / ALONG THE WAY</p><h2 id="about-experiences">一些经历</h2>
       <div class="about-grid"><article v-for="item in experiences" :key="item.title" class="about-info-card"><small v-if="item.period">{{ item.period }}</small><h3>{{ item.title }}</h3><p v-if="item.description">{{ item.description }}</p></article></div>
     </section>
-    <section v-if="contacts.length" class="about-section" aria-labelledby="about-contact"><h2 id="about-contact">保持联系</h2><div class="about-actions"><a v-for="item in contacts" :key="item.label" :href="externalLink(item.url)" target="_blank" rel="noopener noreferrer">{{ item.label }} ↗</a></div></section>
-    <nav class="about-explore" aria-label="继续探索"><RouterLink to="/">阅读笔记 →</RouterLink><RouterLink to="/archive">沿时间回看 →</RouterLink><RouterLink to="/resources">资源收藏 →</RouterLink></nav>
+    <section v-if="!props.projectPage && contacts.length" class="about-section" aria-labelledby="about-contact"><h2 id="about-contact">保持联系</h2><div class="about-actions"><a v-for="item in contacts" :key="item.label" :href="externalLink(item.url)" target="_blank" rel="noopener noreferrer">{{ item.label }} ↗</a></div></section>
+    <nav class="about-explore" aria-label="继续探索"><RouterLink to="/articles">阅读笔记 →</RouterLink><RouterLink to="/archive">沿时间回看 →</RouterLink><RouterLink to="/resources">资源收藏 →</RouterLink></nav>
   </div>
 </template>

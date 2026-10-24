@@ -9,6 +9,7 @@ import { renderArticle } from '../articleReading.js'
 import { siteProfile } from '../siteProfile.js'
 import ReadingToc from '../components/ReadingToc.vue'
 import ReadingContent from '../components/ReadingContent.vue'
+import CollectionTrail from '../components/CollectionTrail.vue'
 import ArticleNeighbors from '../components/ArticleNeighbors.vue'
 
 
@@ -112,9 +113,9 @@ watch(() => route.params.id, loadArticle, { immediate: true })
 
 <template>
   <div class="reading-page">
-    <RouterLink class="back-link" :to="returnLocation">← 返回文章列表</RouterLink>
+    <RouterLink class="back-link" :to="returnLocation">← 返回来处</RouterLink>
     <PageState v-if="loading" kind="loading" heading="h1" layout="article" title="正在打开这篇文章…" />
-    <PageState v-else-if="notFound" kind="not-found" heading="h1" title="这篇记录暂时无法找到" message="文章可能尚未公开、已经撤回，或链接有误。可以返回列表浏览其他记录。" retry-label="重新检查文章" @retry="loadArticle(route.params.id)"><RouterLink class="v2-action" :to="returnLocation">返回文章列表 →</RouterLink></PageState>
+    <PageState v-else-if="notFound" kind="not-found" heading="h1" title="这篇记录暂时无法找到" message="文章可能尚未公开、已经撤回，或链接有误。可以返回列表浏览其他记录。" retry-label="重新检查文章" @retry="loadArticle(route.params.id)"><RouterLink class="v2-action" :to="returnLocation">返回来处 →</RouterLink></PageState>
     <PageState v-else-if="error" kind="error" heading="h1" title="暂时无法阅读" :message="error" retry-label="重新加载文章" @retry="loadArticle(route.params.id)" />
     <template v-else-if="article">
       <div class="reading-progress" role="progressbar" aria-label="正文阅读进度"
@@ -155,10 +156,11 @@ watch(() => route.params.id, loadArticle, { immediate: true })
                @error.capture="scheduleReading">
             <ReadingContent :html="contentHtml" :code-blocks="rendered.codeBlocks" />
           </div>
-          <ArticleNeighbors :article-id="article.id" :from="route.query.from" />
+          <CollectionTrail v-if="returnLocation.path.startsWith('/collections/')" :article-id="article.id" :from="route.query.from" />
+          <ArticleNeighbors v-else :article-id="article.id" :from="route.query.from" />
           <footer class="reading-end">
             <span>这篇记录，到这里告一段落。</span>
-            <RouterLink :to="returnLocation">返回列表，继续探索 →</RouterLink>
+            <RouterLink :to="returnLocation">返回来处，继续探索 →</RouterLink>
           </footer>
         </div>
         <aside v-if="rendered.toc.length" class="reading-toc">

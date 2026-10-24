@@ -1,0 +1,8 @@
+{
+  "featuredArticleIds": [9100002, 9100003, 9100001],
+  "projectArticleIds": [9100001,9100003,9100004,9100002],
+  "collections": [
+    {"slug":"ordered-path","title":"测试阅读路径","description":"按指定顺序阅读","articleIds":[9100003,9100002,9100001,9100004,9100099,9100002]},
+    {"slug":"not-ready","title":"未就绪专题","description":"只有一篇公开文章","articleIds":[9100001,9100003]}
+  ]
+}
