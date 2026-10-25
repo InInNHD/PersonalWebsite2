@@ -44,9 +44,13 @@ export async function adminRequest(path, options = {}) {
       403: '安全校验失败，请重试；若仍失败，请检查后端日志。',
       404: '记录不存在，请刷新列表。',
       413: '图片过大，请选择不超过5MiB的PNG或JPEG图片。',
+      412: '文章已在另一窗口保存或改变状态，本次操作未执行。当前输入仍保留，请先核对服务器版本。',
+      428: '缺少文章版本，请重新加载页面后再操作。',
       409: path.startsWith('/resource-groups') ? '资源分组名称已存在，请换一个名称。' : path.startsWith('/tags') ? '标签名称已存在，请换一个名称。' : path.startsWith('/categories') ? '分类名称已存在，请换一个名称。' : '文章已被回收，请刷新列表并先恢复为草稿。',
     }
-    throw new Error(descriptions[response.status] ?? `请求失败：HTTP ${response.status}`)
+    const error = new Error(descriptions[response.status] ?? `请求失败：HTTP ${response.status}`)
+    error.status = response.status
+    throw error
   }
   const data = response.status === 204 ? null : options.responseType === 'blob' ? await response.blob() : await response.json()
   if (version !== generation) throw new Error('登录状态已变化，请重新操作。')

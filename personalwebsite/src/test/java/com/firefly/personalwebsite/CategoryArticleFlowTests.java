@@ -107,6 +107,8 @@ class CategoryArticleFlowTests {
         assertEquals("PUBLISHED", edited.get("status").asText());
         assertEquals(second, edited.get("categoryId").asLong());
         send(HttpMethod.PUT, adminPath, payload, 200);
+        assertEquals(first, publicGet(publicPath, 200).get("categoryId").asLong());
+        send(HttpMethod.POST, adminPath + "/publish", null, 200);
         assertFalse(containsId(publicGet("/api/articles?categoryId=" + first, 200), id));
         assertTrue(containsId(publicGet("/api/articles?categoryId=" + second, 200), id));
         assertEquals("# Edited body", publicGet(publicPath, 200).get("contentMarkdown").asText());
@@ -117,6 +119,7 @@ class CategoryArticleFlowTests {
 
         payload.put("categoryId", null);
         assertTrue(send(HttpMethod.PUT, adminPath, payload, 200).get("categoryId").isNull());
+        send(HttpMethod.POST, adminPath + "/publish", null, 200);
         var cleared = publicGet(publicPath, 200);
         assertTrue(cleared.get("categoryId").isNull());
         assertTrue(cleared.get("categoryName").isNull());
@@ -240,11 +243,14 @@ class CategoryArticleFlowTests {
         payload.put("tagIds", java.util.List.of(second));
         assertEquals(1, send(HttpMethod.PUT, adminPath, payload, 200)
                 .get("tagIds").size());
+        assertEquals(2, publicGet(publicPath, 200).get("tags").size());
+        send(HttpMethod.POST, adminPath + "/publish", null, 200);
         assertEquals(second, publicGet(publicPath, 200)
                 .get("tags").get(0).get("id").asLong());
 
         payload.put("tagIds", java.util.List.of());
         send(HttpMethod.PUT, adminPath, payload, 200);
+        send(HttpMethod.POST, adminPath + "/publish", null, 200);
         var cleared = publicGet(publicPath, 200);
         assertEquals(0, cleared.get("tags").size());
         assertEquals(publishedAt, cleared.get("publishedAt").asText());
@@ -503,6 +509,7 @@ void searchTreatsSymbolsLiterallyAndIncludesBody() throws Exception {
         var request = request(method, path).session(session).header("Authorization", AUTH)
                 .header(csrfHeader, csrfToken);
         if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        ArticleVersionTestSupport.current(request,jdbc,method.name(),path);
         var result = mvc.perform(request).andExpect(status().is(expected)).andReturn();
         String content = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         return content.isBlank() ? null : json.readTree(content);

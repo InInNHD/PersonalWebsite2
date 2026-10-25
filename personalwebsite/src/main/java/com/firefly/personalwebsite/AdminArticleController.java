@@ -69,7 +69,7 @@ public class AdminArticleController {
     ) {}
 
     // 新建和发布都返回文章编号与当前状态。
-    public record ArticleResult(long id, String status) {}
+    public record ArticleResult(long id, String status, long version) {}
 
     @PostMapping(consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
@@ -120,14 +120,18 @@ public class AdminArticleController {
         // 保存刚创建的文章与所选标签之间的关联。
         articleTags.replace(id.longValue(), request.tagIds());
         mediaStore.replaceReferences(id.longValue(), coverUrl, request.bodyMediaUrls());
-        return new ArticleResult(id.longValue(), "DRAFT");
+        return new ArticleResult(id.longValue(), "DRAFT", 0);
 
     }
 
-    // 所有状态写入先锁定同一行，避免保存/发布与回收并发时越过隔离规则。
-    private AdminDetail lockArticle(long id) {
-        var ids = jdbcTemplate.queryForList("SELECT id FROM article WHERE id = ? FOR UPDATE", Long.class, id);
-        if (ids.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "文章不存在");
+    // 所有写入共享同一版本和行锁：旧窗口不能覆盖保存，也不能误发布新窗口的稿件。
+    private AdminDetail lockArticle(long id, String expected) {
+        if (expected == null) throw new ResponseStatusException(HttpStatus.PRECONDITION_REQUIRED, "缺少文章版本，请重新加载");
+        if (!expected.matches("\"[0-9]{1,18}\"")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "文章版本格式无效");
+        long version = Long.parseLong(expected.substring(1, expected.length()-1));
+        var versions = jdbcTemplate.queryForList("SELECT write_version FROM article WHERE id=? FOR UPDATE", Long.class, id);
+        if (versions.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "文章不存在");
+        if (versions.get(0) != version) throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED, "文章已在另一窗口更改，请保留输入并重新核对版本");
         return detail(id);
     }
 
@@ -137,49 +141,61 @@ public class AdminArticleController {
 
     @PostMapping("/{id}/publish")
     @Transactional
-    public ArticleResult publishDraft(@PathVariable("id") long id) {
-        var article = lockArticle(id);
+    public ArticleResult publishDraft(@PathVariable("id") long id, @RequestHeader(value="If-Match", required=false) String version) {
+        var article = lockArticle(id, version);
         requireActive(article);
-        jdbcTemplate.update("""
-                UPDATE article SET updated_at = CASE WHEN status = 'DRAFT' THEN CURRENT_TIMESTAMP(6) ELSE updated_at END,
-                    published_at = COALESCE(published_at, CURRENT_TIMESTAMP), status = 'PUBLISHED'
-                WHERE id = ? AND deleted_at IS NULL
+        if (article.hasUnpublishedChanges()) {
+            // 内容、分类、标签和图片授权在同一个事务里成为新的公开版本。
+            jdbcTemplate.update("""
+                UPDATE article a JOIN article_edit e ON e.article_id=a.id
+                SET a.title=e.title,a.summary=e.summary,a.content_markdown=e.content_markdown,
+                    a.type=e.type,a.category_id=e.category_id,a.cover_url=e.cover_url,a.pinned=e.pinned
+                WHERE a.id=?
                 """, id);
-        return new ArticleResult(id, "PUBLISHED");
+            jdbcTemplate.update("DELETE FROM article_tag WHERE article_id=?", id);
+            jdbcTemplate.update("INSERT INTO article_tag SELECT article_id,tag_id FROM article_edit_tag WHERE article_id=?", id);
+            jdbcTemplate.update("DELETE FROM article_media WHERE article_id=?", id);
+            jdbcTemplate.update("INSERT INTO article_media SELECT article_id,media_id,usage_role FROM article_edit_media WHERE article_id=?", id);
+            // 关联表通过外键级联清理；删除的是已发布的临时编辑稿，不是文章或媒体文件。
+            jdbcTemplate.update("DELETE FROM article_edit WHERE article_id=?", id);
+        }
+        jdbcTemplate.update("""
+                UPDATE article SET updated_at=CASE WHEN status='DRAFT' OR ? THEN CURRENT_TIMESTAMP(6) ELSE updated_at END,
+                    published_at=COALESCE(published_at,CURRENT_TIMESTAMP),status='PUBLISHED',write_version=write_version+1
+                WHERE id=?
+                """, article.hasUnpublishedChanges(), id);
+        return new ArticleResult(id, "PUBLISHED", article.version()+1);
     }
 
     @PostMapping("/{id}/unpublish")
     @Transactional
-    public ArticleResult unpublish(@PathVariable("id") long id) {
-        requireActive(lockArticle(id));
-        jdbcTemplate.update("UPDATE article SET status='DRAFT', updated_at=CURRENT_TIMESTAMP(6) WHERE id=? AND status='PUBLISHED' AND deleted_at IS NULL", id);
-        return new ArticleResult(id, "DRAFT");
+    public ArticleResult unpublish(@PathVariable("id") long id, @RequestHeader(value="If-Match", required=false) String version) {
+        var article=lockArticle(id,version); requireActive(article);
+        jdbcTemplate.update("UPDATE article SET status='DRAFT',updated_at=CURRENT_TIMESTAMP(6),write_version=write_version+1 WHERE id=?",id);
+        return new ArticleResult(id,"DRAFT",article.version()+1);
     }
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ArticleResult recycle(@PathVariable("id") long id) {
-        var article = lockArticle(id);
-        jdbcTemplate.update("UPDATE article SET deleted_at=CURRENT_TIMESTAMP(6), updated_at=CURRENT_TIMESTAMP(6) WHERE id=? AND deleted_at IS NULL", id);
-        return new ArticleResult(id, article.status());
+    public ArticleResult recycle(@PathVariable("id") long id, @RequestHeader(value="If-Match", required=false) String version) {
+        var article=lockArticle(id,version);
+        jdbcTemplate.update("UPDATE article SET deleted_at=COALESCE(deleted_at,CURRENT_TIMESTAMP(6)),write_version=write_version+1 WHERE id=?",id);
+        return new ArticleResult(id,article.status(),article.version()+1);
     }
 
     @PostMapping("/{id}/restore")
     @Transactional
-    public ArticleResult restore(@PathVariable("id") long id) {
-        var article = lockArticle(id);
-        // 重复恢复不改变已恢复文章的后续状态，避免第二次请求意外撤回公开文章。
-        if (article.deletedAt() != null) {
-            jdbcTemplate.update("UPDATE article SET deleted_at=NULL, status='DRAFT', updated_at=CURRENT_TIMESTAMP(6) WHERE id=?", id);
-            return new ArticleResult(id, "DRAFT");
-        }
-        return new ArticleResult(id, article.status());
+    public ArticleResult restore(@PathVariable("id") long id, @RequestHeader(value="If-Match", required=false) String version) {
+        var article=lockArticle(id,version);
+        // 恢复保留编辑稿，先回到非公开状态；重复恢复不撤回已重新发布的文章。
+        jdbcTemplate.update("UPDATE article SET status=CASE WHEN deleted_at IS NULL THEN status ELSE 'DRAFT' END,deleted_at=NULL,write_version=write_version+1 WHERE id=?",id);
+        return new ArticleResult(id,article.deletedAt()==null?article.status():"DRAFT",article.version()+1);
     }
 
     // 列表不返回完整正文，减少传输的数据量。
     public record AdminSummary(long id, String title, String type, String status,
                                boolean pinned, Long categoryId, String categoryName,
-                               LocalDateTime updatedAt, LocalDateTime deletedAt) {}
+                               LocalDateTime updatedAt, LocalDateTime deletedAt, long version, boolean hasUnpublishedChanges) {}
     public record AdminPage(List<AdminSummary> items, long total, int page, int size, long totalPages) {}
 
     public record AdminDetail(
@@ -194,7 +210,9 @@ public class AdminArticleController {
             String coverUrl,
             boolean pinned,
             LocalDateTime updatedAt,
-            LocalDateTime deletedAt
+            LocalDateTime deletedAt,
+            long version,
+            boolean hasUnpublishedChanges
     ) {}
 
     @GetMapping
@@ -214,21 +232,21 @@ public class AdminArticleController {
                 || (categoryId != null && categoryId <= 0)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "文章筛选或分页参数不合法");
         }
-        String from = " FROM article a LEFT JOIN category c ON c.id=a.category_id WHERE a.deleted_at IS " + (recycled ? "NOT NULL" : "NULL");
+        String from = " FROM article a LEFT JOIN article_edit e ON e.article_id=a.id LEFT JOIN category c ON c.id=CASE WHEN e.article_id IS NULL THEN a.category_id ELSE e.category_id END WHERE a.deleted_at IS " + (recycled ? "NOT NULL" : "NULL");
         var parameters = new ArrayList<Object>();
-        if (!search.isEmpty()) { from += " AND (LOCATE(?, a.title)>0 OR LOCATE(?, a.summary)>0)"; parameters.add(search); parameters.add(search); }
+        if (!search.isEmpty()) { from += " AND (LOCATE(?, COALESCE(e.title,a.title))>0 OR LOCATE(?, COALESCE(e.summary,a.summary))>0)"; parameters.add(search); parameters.add(search); }
         if (status != null) { from += " AND a.status=?"; parameters.add(status); }
-        if (type != null) { from += " AND a.type=?"; parameters.add(type); }
-        if (categoryId != null) { from += " AND a.category_id=?"; parameters.add(categoryId); }
+        if (type != null) { from += " AND COALESCE(e.type,a.type)=?"; parameters.add(type); }
+        if (categoryId != null) { from += " AND (CASE WHEN e.article_id IS NULL THEN a.category_id ELSE e.category_id END)=?"; parameters.add(categoryId); }
         long total = jdbcTemplate.queryForObject("SELECT COUNT(*)" + from, Long.class, parameters.toArray());
         long pages = (total + size - 1) / size;
         int actualPage = (int) Math.min(page, Math.max(1, pages));
         parameters.add(size); parameters.add((long) (actualPage - 1) * size);
-        String sql = "SELECT a.id,a.title,a.type,a.status,a.pinned,a.category_id,c.name category_name,a.updated_at,a.deleted_at" + from
+        String sql = "SELECT a.id,COALESCE(e.title,a.title) title,COALESCE(e.type,a.type) type,a.status,COALESCE(e.pinned,a.pinned) pinned,CASE WHEN e.article_id IS NULL THEN a.category_id ELSE e.category_id END category_id,c.name category_name,COALESCE(e.updated_at,a.updated_at) updated_at,a.deleted_at,a.write_version,e.article_id IS NOT NULL has_changes" + from
                 + (recycled ? " ORDER BY a.deleted_at DESC,a.id DESC" : " ORDER BY a.id DESC") + " LIMIT ? OFFSET ?";
         var items = jdbcTemplate.query(sql, (rs, rowNum) -> new AdminSummary(rs.getLong("id"), rs.getString("title"),
                 rs.getString("type"), rs.getString("status"), rs.getBoolean("pinned"), rs.getObject("category_id",Long.class),
-                rs.getString("category_name"), rs.getObject("updated_at",LocalDateTime.class), rs.getObject("deleted_at",LocalDateTime.class)), parameters.toArray());
+                rs.getString("category_name"), rs.getObject("updated_at",LocalDateTime.class), rs.getObject("deleted_at",LocalDateTime.class),rs.getLong("write_version"),rs.getBoolean("has_changes")), parameters.toArray());
         return new AdminPage(items,total,actualPage,size,pages);
     }
 
@@ -236,10 +254,14 @@ public class AdminArticleController {
     @Transactional(readOnly = true)
     public AdminDetail detail(@PathVariable("id") long id) {
         String sql = """
-        SELECT id, title, summary, content_markdown,
-               type, status, category_id, cover_url, pinned, updated_at, deleted_at
-        FROM article
-        WHERE id = ?
+        SELECT a.id,COALESCE(e.title,a.title) title,COALESCE(e.summary,a.summary) summary,
+               COALESCE(e.content_markdown,a.content_markdown) content_markdown,
+               COALESCE(e.type,a.type) type,a.status,
+               CASE WHEN e.article_id IS NULL THEN a.category_id ELSE e.category_id END category_id,
+               CASE WHEN e.article_id IS NULL THEN a.cover_url ELSE e.cover_url END cover_url,
+               COALESCE(e.pinned,a.pinned) pinned,COALESCE(e.updated_at,a.updated_at) updated_at,
+               a.deleted_at,a.write_version,e.article_id IS NOT NULL has_changes
+        FROM article a LEFT JOIN article_edit e ON e.article_id=a.id WHERE a.id=?
         """;
 
         AdminDetail article = jdbcTemplate.query(sql, rs -> {
@@ -257,14 +279,16 @@ public class AdminArticleController {
 
                     // getObject 保留 SQL NULL；不能用 getLong 将其读成 0。
                     rs.getObject("category_id", Long.class),
-                    articleTags.read(id).stream()
+                    rs.getBoolean("has_changes") ? articleTags.readEditing(id) : articleTags.read(id).stream()
                             .map(ArticleTags.TagItem::id)
                             .toList(),
                     rs.getString("cover_url"),
                     rs.getBoolean("pinned"),
                     // 旧文章的更新时间允许为空，getObject保留null。
                     rs.getObject("updated_at", LocalDateTime.class),
-                    rs.getObject("deleted_at", LocalDateTime.class)
+                    rs.getObject("deleted_at", LocalDateTime.class),
+                    rs.getLong("write_version"),
+                    rs.getBoolean("has_changes")
             );
         }, id);
 
@@ -279,19 +303,20 @@ public class AdminArticleController {
     @Transactional
     public AdminDetail update(
             @PathVariable("id") long id,
-            @Valid @RequestBody DraftRequest request) {
+            @Valid @RequestBody DraftRequest request,
+            @RequestHeader(value="If-Match", required=false) String version) {
 
         // 先确认文章存在；不存在时返回 404，避免插入无效关联。
-        requireActive(lockArticle(id));
+        requireActive(lockArticle(id,version));
         checkCategory(request.categoryId());
         String coverUrl = validateCoverUrl(request.coverUrl());
 
+        // article始终保留上次公开内容。草稿独立保存，发布时才替换公开副本。
         String sql = """
-            UPDATE article
-            SET title = ?, summary = ?, content_markdown = ?,
-                type = ?, category_id = ?, cover_url = ?, pinned = ?,
-                updated_at = CURRENT_TIMESTAMP(6)
-            WHERE id = ? AND deleted_at IS NULL
+            INSERT INTO article_edit(title,summary,content_markdown,type,category_id,cover_url,pinned,article_id)
+            VALUES (?,?,?,?,?,?,?,?)
+            ON DUPLICATE KEY UPDATE title=VALUES(title),summary=VALUES(summary),content_markdown=VALUES(content_markdown),
+                type=VALUES(type),category_id=VALUES(category_id),cover_url=VALUES(cover_url),pinned=VALUES(pinned),updated_at=CURRENT_TIMESTAMP(6)
             """;
 
         // 保存内容时保留文章状态和第一次发布时间。
@@ -306,8 +331,9 @@ public class AdminArticleController {
                 id);
 
         // 标签无效时抛出异常，刚才的文章内容更新也会回滚。
-        articleTags.replace(id, request.tagIds());
-        mediaStore.replaceReferences(id, coverUrl, request.bodyMediaUrls());
+        articleTags.replace(id, request.tagIds(), true);
+        mediaStore.replaceReferences(id, coverUrl, request.bodyMediaUrls(), true);
+        jdbcTemplate.update("UPDATE article SET write_version=write_version+1 WHERE id=?",id);
         return detail(id);
     }
 

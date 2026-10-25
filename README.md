@@ -4,13 +4,15 @@
 
 ## 当前版本
 
-当前阶段预发布 **v3.0.0-alpha.2**（2026-10-24），前后端构建版本均为 **3.0.0-alpha.2**。它包含第三版第三轮正文搜索与阅读体验；上一版为v3.0.0-alpha.1。第三版RC/正式版和云部署尚未完成，第二版正式v2.0.0也未发布。
+当前阶段预发布 **v3.0.0-alpha.3**（2026-10-25），前后端构建版本均为 **3.0.0-alpha.3**。本轮为4A编辑冲突检测与编辑稿隔离；上一版为alpha.2。第三版RC/正式版和云部署尚未完成。**升级前必须停写、备份并执行一次008；个人库尚未执行。**
 
-[当前Alpha发布说明](docs/RELEASE-v3.0.0-alpha.2.md) · [上一版Alpha说明](docs/RELEASE-v3.0.0-alpha.1.md) · [上一版RC说明](docs/RELEASE-v2.0.0-rc.1.md) · [正式版说明草稿](docs/RELEASE-v2.0.0.md) · [发布准备与待办](docs/V2-RELEASE-READINESS.md) · [整站验收](docs/V2-FINAL-ACCEPTANCE.md) · [项目历史](docs/PROJECT-PROGRESS.md)
+[当前Alpha发布说明](docs/RELEASE-v3.0.0-alpha.3.md) · [上一版Alpha说明](docs/RELEASE-v3.0.0-alpha.2.md) · [上一版RC说明](docs/RELEASE-v2.0.0-rc.1.md) · [正式版说明草稿](docs/RELEASE-v2.0.0.md) · [发布准备与待办](docs/V2-RELEASE-READINESS.md) · [整站验收](docs/V2-FINAL-ACCEPTANCE.md) · [项目历史](docs/PROJECT-PROGRESS.md)
 
 整站技术验收：前端74项、专用MySQL后端32项、恢复工具5项，64组四档宽度和桌面Edge复核，以及新安装、升级、数据库与媒体恢复通过。用户已认可暗色风格；实体手机按用户要求暂缓，作为未验证限制保留；正式内容草稿待审阅。GitHub资料已成功刷新；云部署另行规划。
 
 ## 功能
+
+最新工作区进度（2026-10-25）：第三版4A已实现编辑版本冲突检测、编辑稿/公开稿分离、待发布提示及服务器稿对照；前端90项、MySQL47项、7组真实HTTP检查及两端构建通过，旧库升级与11表/2图恢复演练通过。4A纳入v3.0.0-alpha.3阶段预发布，构建版本已同步。**本轮需要008迁移，个人库尚未执行**，启动新代码前按[4A升级指南](docs/34-v3-reliable-writing-a.md)完成备份与迁移。详见[验收报告](docs/V3-ROUND4A-ACCEPTANCE.md)。
 
 开发进度：[第三版差距核对与改进计划](docs/V3-IMPROVEMENT-PLAN.md)。已发布的v3.0.0-alpha.1包含第二轮首页、文章库与内容组织。工作区继续完成第三轮正文搜索、匹配片段、安全高亮、字号与专注阅读、干净分享链接；前端87项、真实MySQL42项、8组HTTP/产物检查及两端构建通过，12组响应式页面检查通过。第三轮纳入v3.0.0-alpha.2阶段预发布，无需SQL迁移，个人数据未改动。见[使用指南](docs/33-v3-search-reading.md)和[验收报告](docs/V3-ROUND3-ACCEPTANCE.md)。
 
@@ -19,7 +21,7 @@
 - 独立首页和文章库、精选、学习专题顺序阅读、项目实践笔记；置顶/封面、Markdown正文、目录、代码高亮/复制、阅读进度、图片查看和连续阅读。
 - 分类/多标签、标题/摘要/正文搜索与安全命中片段、分页、归档、公开精选日记、资源分组及个人项目展示。
 - 阅读字号记忆、专注模式、章节位置保持和不含浏览状态的文章链接复制。
-- 独立管理员工作台，草稿/发布/撤回/回收/恢复、编辑预览、未保存保护。
+- 独立管理员工作台，草稿/发布/撤回/回收/恢复、编辑预览、未保存保护、版本冲突检测；保存编辑稿不改变公开副本，显式发布才同步内容与图片。
 - 本地图片校验和公开隔离，数据库/源码配置/媒体离线备份与恢复失败回滚。
 - 响应式暗色界面、加载/空/错误/404状态、动态标题和键盘入口。
 
@@ -29,7 +31,7 @@
 | --- | --- |
 | frontend/ | Vue应用、公开GitHub快照及前端测试 |
 | personalwebsite/ | Spring Boot后端与真实MySQL测试 |
-| database/ | 000～007一次性初始化及升级脚本 |
+| database/ | 000～008一次性初始化及升级脚本 |
 | scripts/ | 本机备份恢复工具及标准库测试 |
 | docs/ | 使用指南、验收报告、设计与阶段历史 |
 
@@ -53,6 +55,7 @@
 | 6 | `database/005-article-presentation.sql` | 新增封面地址、置顶与更新时间 |
 | 7 | `database/006-article-recycle.sql` | 新增文章回收时间及可见性索引 |
 | 8 | `database/007-resources-media.sql` | 资源分组/图标/推荐理由，媒体及文章关联表 |
+| 9 | `database/008-article-editing.sql` | 写入版本及独立编辑稿、标签和媒体关联 |
 
 使用 MySQL 命令行时，在 PowerShell 运行：
 
@@ -72,23 +75,24 @@ USE personal_website;
 SOURCE E:/PersonalWebsite2/database/005-article-presentation.sql;
 SOURCE E:/PersonalWebsite2/database/006-article-recycle.sql;
 SOURCE E:/PersonalWebsite2/database/007-resources-media.sql;
+SOURCE E:/PersonalWebsite2/database/008-article-editing.sql;
 SHOW TABLES;
 ```
 
-结果应包含 `article`、`resource_link`、`category`、`tag`、`article_tag`、`resource_group`、`media_asset`、`article_media` 八张表。也可用 IDEA 数据库工具或其他 MySQL 客户端，按表格顺序打开并执行脚本。初始化账号需要建库、建表、建索引和外键权限；应用账号需要访问这些表的读写权限。图片目录需要当前Java进程具备读写权限，不能在Web服务器中直接公开为静态目录。
+结果应包含 `article`、`resource_link`、`category`、`tag`、`article_tag`、`resource_group`、`media_asset`、`article_media`、`article_edit`、`article_edit_tag`、`article_edit_media` 十一张表。也可用 IDEA 数据库工具或其他 MySQL 客户端，按表格顺序打开并执行脚本。初始化账号需要建库、建表、建索引和外键权限；应用账号需要访问这些表的读写权限。图片目录需要当前Java进程具备读写权限，不能在Web服务器中直接公开为静态目录。
 
-脚本默认数据库名为 `personal_website`。使用其他库名时，统一替换脚本中的库名，执行005～007前确认选中目标库，再将 `DB_URL` 指向该库。
+脚本默认数据库名为 `personal_website`。使用其他库名时，统一替换脚本中的库名，执行005～008前确认选中目标库，再将 `DB_URL` 指向该库。
 
 ## 已有数据库：升级
 
 先备份数据库，并确认当前表结构，再执行尚未应用的脚本。脚本属于一次性迁移，不能重复执行；任何一步报错都应先处理，再继续。
 
-- 从 `v0.1.0` 升级：已有初始文章表，依次执行 `001`～`007`；如果部分脚本已经应用，跳过对应项。
-- 从 `v0.2.0` 升级：已有文章、资源、分类表，依次执行 `003`、`004`、`005`、`006`、`007`。
-- 从 `v0.3.0`～`v0.6.0` 升级到当前第二版源码：备份后依次执行 `005-article-presentation.sql`、`006-article-recycle.sql`、`007-resources-media.sql`，再同步更新并重启前后端。
-- 从 `v0.7.0`～`v0.9.0` 升级：备份后依次执行一次 `006-article-recycle.sql`、`007-resources-media.sql`。
-- 从 `v0.10.0` 升级：备份后执行一次 `007-resources-media.sql`，同步更新前后端。
-- 已完成007的安装（v0.11.0及以后）：无需新迁移，只更新对应代码与产物；当前本机已完成007，不要重复执行。
+- 从 `v0.1.0` 升级：已有初始文章表，依次执行 `001`～`008`；如果部分脚本已经应用，跳过对应项。
+- 从 `v0.2.0` 升级：已有文章、资源、分类表，依次执行 `003`～`008`。
+- 从 `v0.3.0`～`v0.6.0` 升级：备份后依次执行 `005`～`008`，再同步更新并重启前后端。
+- 从 `v0.7.0`～`v0.9.0` 升级：备份后依次执行一次 `006`、`007`、`008`。
+- 从 `v0.10.0` 升级：备份后执行一次 `007`、`008`，同步更新前后端。
+- 已完成007的安装（包括v3.0.0-alpha.2）：停写并备份后执行一次 `008-article-editing.sql`，再同步更新前后端。个人库本轮尚未执行008；不要重复000～007。具体核对SQL和恢复步骤见[4A指南](docs/34-v3-reliable-writing-a.md)。
 
 已有数据库升级时跳过 `000-init-article.sql`。分类升级后，已有文章的 `category_id` 为 `NULL`，页面显示“未分类”；标签升级不会修改现有文章，没有关联记录的文章显示为无标签。
 
@@ -141,7 +145,7 @@ python -m unittest discover -s scripts/tests -v
 npm.cmd --prefix frontend run build
 ```
 
-后端测试需要已初始化000～007的独立真实MySQL库。配置DB_URL到 `pw_v2admin_acceptance_` 开头的专用库；应用账号只给该库读写权限，不允许访问个人库。再进入personalwebsite运行 `.\mvnw.cmd test`。测试会写入数据、自增编号可能前进，不能对个人内容库执行。当前常规src/test有33项；第三版第三轮42项还包含docs/checks中的9项导航、主题及时间线专项，执行范围见docs/V3-ROUND3-ACCEPTANCE.md。
+后端测试需要已初始化000～008的独立真实MySQL库。配置DB_URL到 `pw_v2admin_acceptance_` 开头的专用库；应用账号只给该库读写权限，不允许访问个人库。再进入personalwebsite运行 `.\mvnw.cmd test`。测试会写入数据、自增编号可能前进，不能对个人内容库执行。当前常规src/test有38项；4A的47项还包含docs/checks中的9项导航、主题及时间线专项，执行范围见docs/V3-ROUND4A-ACCEPTANCE.md。
 
 发布JAR必须在不含真实配置的干净副本打包，将示例配置复制为application.properties后使用环境变量。执行 `.\mvnw.cmd -DskipTests package` 得到 `target/personalwebsite-2.0.0-rc.1.jar`；此命令跳过测试，不能作为测试通过的依据。前端dist需使用HTTP服务、SPA页面回退及同源/api代理；API错误不能回退成HTML。
 

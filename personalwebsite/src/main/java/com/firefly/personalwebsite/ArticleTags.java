@@ -29,6 +29,10 @@ public class ArticleTags {
                 .getOrDefault(articleId, List.of());
     }
 
+    public List<Long> readEditing(long articleId) {
+        return jdbcTemplate.queryForList("SELECT tag_id FROM article_edit_tag WHERE article_id=? ORDER BY tag_id", Long.class, articleId);
+    }
+
     public Map<Long, List<TagItem>> readFor(List<Long> articleIds) {
         // 空列表不能生成 IN ()；也不必访问数据库。
         if (articleIds.isEmpty()) return Map.of();
@@ -59,6 +63,13 @@ public class ArticleTags {
 
     @Transactional
     public void replace(long articleId, List<Long> requestedIds) {
+        replace(articleId, requestedIds, false);
+    }
+
+    @Transactional
+    public void replace(long articleId, List<Long> requestedIds, boolean editing) {
+        // 表名只由服务端布尔值选择，绝不接收客户端表名。
+        String table = editing ? "article_edit_tag" : "article_tag";
         // 兼容没有 tagIds 的旧请求，将其视为“不选择标签”。
         // 新前端会始终发送数组；[] 明确表示清空全部标签。
         List<Long> ids = requestedIds == null
@@ -84,11 +95,11 @@ public class ArticleTags {
 
         // 先检查，再替换。这里只删除文章与标签的关联。
         jdbcTemplate.update(
-                "DELETE FROM article_tag WHERE article_id = ?", articleId);
+                "DELETE FROM " + table + " WHERE article_id = ?", articleId);
 
         for (Long tagId : ids) {
             jdbcTemplate.update(
-                    "INSERT INTO article_tag (article_id, tag_id) VALUES (?, ?)",
+                    "INSERT INTO " + table + " (article_id, tag_id) VALUES (?, ?)",
                     articleId, tagId);
         }
     }

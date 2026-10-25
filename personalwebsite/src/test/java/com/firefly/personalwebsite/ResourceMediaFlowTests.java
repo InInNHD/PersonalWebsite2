@@ -49,6 +49,7 @@ class ResourceMediaFlowTests {
     JsonNode write(String method,String path,Object body,int expected) throws Exception {
         var builder=request(org.springframework.http.HttpMethod.valueOf(method),path).header("Authorization",auth).header(header,token).session(session);
         if(body!=null)builder.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        ArticleVersionTestSupport.current(builder,jdbc,method,path);
         return json.readTree(mvc.perform(builder).andExpect(status().is(expected)).andReturn().getResponse().getContentAsString());
     }
     byte[] png(int w,int h) throws Exception {
@@ -101,7 +102,22 @@ class ResourceMediaFlowTests {
         write("POST","/api/admin/articles/"+id+"/publish",null,200);write("DELETE","/api/admin/articles/"+id,null,200);mvc.perform(get(url)).andExpect(status().isNotFound());
         write("POST","/api/admin/articles/"+id+"/restore",null,200);mvc.perform(get(url)).andExpect(status().isNotFound());
         payload.put("coverUrl","");payload.put("contentMarkdown","正文不再包含图片");payload.put("bodyMediaUrls",List.of());write("PUT","/api/admin/articles/"+id,payload,200);
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM article_edit_media WHERE article_id=?",Integer.class,id));
+        write("POST","/api/admin/articles/"+id+"/publish",null,200);
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM article_media WHERE article_id=?",Integer.class,id));
+    }
+    @Test void pendingCoverAndBodyMediaStayPrivateUntilPublish() throws Exception {
+        String oldUrl=upload("old.png","image/png",png(16,16),201).get("url").asText();
+        String newUrl=upload("new.png","image/png",png(18,18),201).get("url").asText();
+        var body=article(oldUrl,"旧正文");long id=write("POST","/api/admin/articles",body,201).get("id").asLong();String path="/api/admin/articles/"+id;
+        write("POST",path+"/publish",null,200);
+        body.put("coverUrl",newUrl);body.put("contentMarkdown","![新图]("+newUrl+")");body.put("bodyMediaUrls",List.of(newUrl));
+        write("PUT",path,body,200);
+        mvc.perform(get(oldUrl)).andExpect(status().isOk());mvc.perform(get(newUrl)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/admin/media/"+newUrl.substring("/api/media/".length())+"/content").header("Authorization",auth)).andExpect(status().isOk());
+        write("POST",path+"/publish",null,200);
+        mvc.perform(get(oldUrl)).andExpect(status().isNotFound());mvc.perform(get(newUrl)).andExpect(status().isOk());
+        write("POST",path+"/unpublish",null,200);mvc.perform(get(newUrl)).andExpect(status().isNotFound());
     }
     // 单独使用真实HTTP事务边界，确认400响应后新增行已经回滚；其他测试由外层事务回滚。
     @Test

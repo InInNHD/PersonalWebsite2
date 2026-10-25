@@ -40,6 +40,7 @@ class AdminWorkflowTests {
         var builder=org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request(org.springframework.http.HttpMethod.valueOf(method),java.net.URI.create(path)).header("Authorization",auth).header("X-Requested-With","XMLHttpRequest").session(session);
         if(!method.equals("GET"))builder.header(header,token);
         if(body!=null)builder.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        ArticleVersionTestSupport.current(builder,jdbc,method,path);
         var text=mvc.perform(builder).andExpect(status().is(status)).andReturn().getResponse().getContentAsString();
         return text.isBlank()?null:json.readTree(text);
     }

@@ -91,6 +91,10 @@ public class MediaStore {
     }
     // 与文章保存在同一事务内，编辑正文和封面时同步重建关联。
     public void replaceReferences(long articleId,String cover,List<String> bodyMediaUrls) {
+        replaceReferences(articleId,cover,bodyMediaUrls,false);
+    }
+    public void replaceReferences(long articleId,String cover,List<String> bodyMediaUrls,boolean editing) {
+        String table=editing?"article_edit_media":"article_media";
         var roles=new LinkedHashMap<String,Set<String>>();
         String filename=localFilename(cover);
         if(filename!=null) roles.computeIfAbsent(filename,k->new HashSet<>()).add("COVER");
@@ -101,8 +105,8 @@ public class MediaStore {
             if(name==null) throw bad("正文媒体关联必须是本站上传图片地址");
             roles.computeIfAbsent(name,k->new HashSet<>()).add("BODY");
         }
-        jdbc.update("DELETE FROM article_media WHERE article_id=?",articleId);
-        roles.forEach((name,uses)->uses.forEach(role->jdbc.update("INSERT INTO article_media(article_id,media_id,usage_role) SELECT ?,id,? FROM media_asset WHERE filename=?",articleId,role,name)));
+        jdbc.update("DELETE FROM "+table+" WHERE article_id=?",articleId);
+        roles.forEach((name,uses)->uses.forEach(role->jdbc.update("INSERT INTO "+table+"(article_id,media_id,usage_role) SELECT ?,id,? FROM media_asset WHERE filename=?",articleId,role,name)));
     }
     public Path read(String filename,boolean admin) {
         Path file=path(filename);

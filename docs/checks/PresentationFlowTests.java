@@ -78,6 +78,8 @@ class PresentationFlowTests {
         payload.put("coverUrl", "  ");
         payload.put("pinned", false);
         send(HttpMethod.PUT, path, payload, 200);
+        assertTrue(publicGet("/api/articles/" + id, 200).get("pinned").asBoolean());
+        send(HttpMethod.POST, path + "/publish", null, 200);
         var cleared = publicGet("/api/articles/" + id, 200);
         assertTrue(cleared.get("coverUrl").isNull());
         assertFalse(cleared.get("pinned").asBoolean());
@@ -127,6 +129,8 @@ class PresentationFlowTests {
         var payload = article(category);
         payload.put("pinned", false);
         send(HttpMethod.PUT, "/api/admin/articles/" + ids.get(0), payload, 200);
+        assertEquals(ids.get(0).longValue(), publicResponse(base, 200).get("items").get(0).get("id").asLong());
+        send(HttpMethod.POST, "/api/admin/articles/" + ids.get(0) + "/publish", null, 200);
         assertEquals(ids.get(2).longValue(), publicResponse(base, 200).get("items").get(0).get("id").asLong());
     }
 
@@ -191,6 +195,7 @@ class PresentationFlowTests {
         var request = request(method, path).session(session).header("Authorization", AUTH)
                 .header(csrfHeader, csrfToken);
         if (body != null) request.contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body));
+        ArticleVersionTestSupport.current(request,jdbc,method.name(),path);
         var result = mvc.perform(request).andExpect(status().is(expected)).andReturn();
         String content = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
         return content.isBlank() ? null : json.readTree(content);

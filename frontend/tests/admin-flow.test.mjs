@@ -15,7 +15,7 @@ function component(file,extra,names){
 const leave=()=>({discardOpen:ref(false),resolveDiscard:()=>{},askDiscard:()=>true,navigateSaved:async action=>action()})
 function editor(request,extra={}){
   const route=reactive({params:{},query:{from:'/admin/articles?status=DRAFT&page=2'}}), destinations=[]
-  const app=component('views/AdminArticleEditorView.vue',{useRoute:()=>route,useRouter:()=>({replace:async next=>{destinations.push(next);route.params.id=next.path?.split('/')[3]}}),adminRequest:request,adminTarget:raw=>raw??'/admin/articles',useAdminLeave:leave,...extra},'form,ready,busy,loading,error,savedSnapshot,dirty,fillForm,emptyArticle,loadDocument,persist,save,action,resolveAction,payload,textarea,insertMarkdown,preview')
+  const app=component('views/AdminArticleEditorView.vue',{useRoute:()=>route,useRouter:()=>({replace:async next=>{destinations.push(next);route.params.id=next.path?.split('/')[3]}}),adminRequest:request,adminTarget:raw=>raw??'/admin/articles',useAdminLeave:leave,...extra},'form,ready,busy,loading,error,savedSnapshot,dirty,fillForm,emptyArticle,loadDocument,persist,save,action,resolveAction,payload,textarea,insertMarkdown,preview,conflict,serverCopy,compareServer,retryLoad')
   return {...app,route,destinations}
 }
 
@@ -109,4 +109,44 @@ test('后台分页只接受最新响应，回收和恢复调用正确接口并�
   assert.equal(app.editorLocation('new').path,'/admin/articles/new')
   await app.loadArticles();assert.equal(app.result.value.total,0);app.confirmation.value={article:{id:7,title:'草稿'},action:'recycle'};await app.performAction(true);assert.equal(calls[1].path,'/articles/7');assert.equal(calls[1].options.method,'DELETE')
   app.confirmation.value={article:{id:7,title:'草稿'},action:'restore'};await app.performAction(true);assert.ok(calls.some(x=>x.path==='/articles/7/restore'));assert.equal(app.editorLocation(7).query.from,route.fullPath)
+})
+
+test('公开文保存只更新编辑稿，显式发布使用保存返回的新版本',async()=>{
+  const calls=[],notices=[];let version=7
+  const app=editor(async(path,options)=>{
+    calls.push({path,options});assert.equal(options.headers['If-Match'],`"${version}"`)
+    version++
+    return {id:42,status:'PUBLISHED',version,hasUnpublishedChanges:!path.endsWith('/publish')}
+  },{notifyAdmin:text=>notices.push(text)})
+  app.fillForm({...app.emptyArticle(),id:42,title:'已公开',contentMarkdown:'旧正文',status:'PUBLISHED',version});app.ready.value=true
+  app.form.contentMarkdown='新编辑稿';await app.save()
+  assert.equal(app.form.version,8);assert.equal(app.form.hasUnpublishedChanges,true);assert.equal(app.dirty.value,false)
+  assert.deepEqual(calls.map(x=>x.options.method),['PUT']);assert.match(notices.at(-1),/公开版本尚未更新/)
+  await app.save(true)
+  assert.deepEqual(calls.map(x=>x.options.method),['PUT','PUT','POST']);assert.equal(calls.at(-1).path,'/articles/42/publish');assert.equal(app.form.version,10);assert.equal(app.form.hasUnpublishedChanges,false)
+})
+
+test('冲突保留输入和旧版本，查看服务器稿不自动授权覆盖，取消重载仍可复制本地稿',async()=>{
+  const app=editor(async(path,options)=>{
+    if(options)throw Object.assign(new Error('另一窗口已保存'),{status:412})
+    return {id:42,title:'服务器标题',contentMarkdown:'服务器正文',version:9,status:'PUBLISHED'}
+  },{useAdminLeave:()=>({...leave(),askDiscard:()=>false})})
+  app.fillForm({...app.emptyArticle(),id:42,title:'原稿',contentMarkdown:'原文',version:7});app.ready.value=true
+  app.form.title='本地标题';app.form.contentMarkdown='必须保留的本地正文';await app.save()
+  assert.equal(app.conflict.value,true);assert.equal(app.dirty.value,true);assert.equal(app.form.version,7)
+  await app.compareServer();assert.equal(app.serverCopy.value.version,9);assert.equal(app.form.version,7);assert.equal(app.form.contentMarkdown,'必须保留的本地正文')
+  await app.retryLoad();assert.equal(app.form.title,'本地标题');assert.equal(app.ready.value,true)
+})
+
+test('保存后发生竞争时发布412不误报成功、不重复新建，错误状态可以区分',async()=>{
+  const calls=[],notices=[]
+  const app=editor(async(path,options)=>{
+    calls.push({path,options});if(path.endsWith('/publish')){assert.equal(options.headers['If-Match'],'"0"');throw Object.assign(new Error('发布版本冲突'),{status:412})}
+    return {id:99,status:'DRAFT',version:0}
+  },{notifyAdmin:text=>notices.push(text)})
+  app.fillForm(app.emptyArticle());app.ready.value=true;app.form.title='新稿';app.form.contentMarkdown='新文'
+  await app.save(true);assert.equal(app.form.id,99);assert.equal(app.form.version,0);assert.equal(app.conflict.value,true);assert.match(app.error.value,/已保存.*发布未完成/);assert.equal(app.dirty.value,false)
+  assert.equal(notices.filter(x=>x.includes('已发布')).length,0);assert.equal(calls.filter(x=>x.path==='/articles').length,1)
+  const client=session(async path=>response(path.endsWith('/check')?{ok:true}:path.endsWith('/csrf')?{headerName:'X-CSRF-TOKEN',token:'x'}:{},path.endsWith('/check')||path.endsWith('/csrf')?200:412))
+  await client.loginAdmin('fixture');await assert.rejects(client.adminRequest('/articles/99',{method:'PUT',headers:{'If-Match':'"0"'},body:'{}'}),error=>error.status===412&&/当前输入仍保留/.test(error.message))
 })

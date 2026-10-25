@@ -50,7 +50,7 @@ async function performAction(accepted) {
   if (!accepted || busy.value || !item) return
   busy.value = true; error.value = ''
   try {
-    await adminRequest(`/articles/${item.article.id}${item.action === 'recycle' ? '' : '/' + item.action}`, { method: item.action === 'recycle' ? 'DELETE' : 'POST' })
+    await adminRequest(`/articles/${item.article.id}${item.action === 'recycle' ? '' : '/' + item.action}`, { method: item.action === 'recycle' ? 'DELETE' : 'POST', headers: { 'If-Match': `"${item.article.version}"` } })
     notifyAdmin(`${actionNames[item.action]}成功：${item.article.title}`)
     await loadArticles()
   } catch (cause) { error.value = cause.message }
@@ -79,7 +79,7 @@ onMounted(loadCategories)
     <template v-else-if="result">
       <PageState v-if="!result.items.length" :title="recycled ? '当前条件下没有回收记录' : '没有匹配的文章'" message="可以调整筛选条件，或新建一篇草稿。" />
       <ul v-else class="studio-article-list"><li v-for="article in result.items" :key="article.id">
-        <div><div class="studio-row-meta"><span :class="['studio-status', { published: !recycled && article.status === 'PUBLISHED' }]">{{ recycled ? '已回收' : article.status === 'PUBLISHED' ? '已发布' : '草稿' }}</span><span>{{ typeNames[article.type] }}</span><span>{{ article.categoryName || '未分类' }}</span><span v-if="article.pinned">置顶</span></div><h2><span v-if="recycled">{{ article.title }}</span><RouterLink v-else :to="editorLocation(article.id)">{{ article.title }}</RouterLink></h2><small>编号 {{ article.id }} · {{ article.updatedAt ? '更新于 ' + article.updatedAt.replace('T', ' ').slice(0, 16) : '尚无更新时间' }}</small></div>
+        <div><div class="studio-row-meta"><span :class="['studio-status', { published: !recycled && article.status === 'PUBLISHED' }]">{{ recycled ? '已回收' : article.status === 'PUBLISHED' ? '已发布' : '草稿' }}</span><span v-if="article.hasUnpublishedChanges">有待发布编辑稿</span><span>{{ typeNames[article.type] }}</span><span>{{ article.categoryName || '未分类' }}</span><span v-if="article.pinned">置顶</span></div><h2><span v-if="recycled">{{ article.title }}</span><RouterLink v-else :to="editorLocation(article.id)">{{ article.title }}</RouterLink></h2><small>编号 {{ article.id }} · {{ article.updatedAt ? '更新于 ' + article.updatedAt.replace('T', ' ').slice(0, 16) : '尚无更新时间' }}</small></div>
         <div class="studio-row-actions"><template v-if="!recycled"><RouterLink :to="editorLocation(article.id)" :aria-label="`编辑：${article.title}`">继续编辑 →</RouterLink><button v-if="article.status === 'PUBLISHED'" type="button" :disabled="busy" @click="confirmation = { article, action: 'unpublish' }">撤回公开</button><button type="button" :disabled="busy" @click="confirmation = { article, action: 'recycle' }">回收</button></template><button v-else type="button" :disabled="busy" @click="confirmation = { article, action: 'restore' }">恢复为草稿</button></div>
       </li></ul>
       <ArticlePagination :page="result.page" :total-pages="result.totalPages" :loading="loading || busy" @change="changePage" />

@@ -9,9 +9,11 @@ import { useAdminLeave } from '../useAdminLeave.js'
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue'
 import AdminMediaPanel from '../components/AdminMediaPanel.vue'
 const route = useRoute(), router = useRouter()
-function emptyArticle() { return { id: null, title: '', summary: '', contentMarkdown: '', type: 'NOTE', status: 'DRAFT', categoryId: null, tagIds: [], coverUrl: '', pinned: false, deletedAt: null } }
+function emptyArticle() { return { id: null, title: '', summary: '', contentMarkdown: '', type: 'NOTE', status: 'DRAFT', categoryId: null, tagIds: [], coverUrl: '', pinned: false, deletedAt: null, version: 0, hasUnpublishedChanges: false } }
 const form = reactive(emptyArticle()), categories = ref([]), tags = ref([])
 const busy = ref(false), loading = ref(false), ready = ref(false), error = ref(''), savedSnapshot = ref('')
+const conflict = ref(false), serverCopy = ref(null)
+const versionHeaders = () => ({ 'If-Match': `"${form.version}"` })
 usePageMeta(() => form.id ? `编辑：${form.title || '文章'}` : '新建文章', '个人网站的文章编辑工作台。', true)
 const imageBusy = ref(false), imagePreviews = ref({})
 const localImages = computed(() => [...new Set([form.coverUrl, ...bodyMediaUrls.value].map(localMediaBase).filter(Boolean))])
@@ -53,6 +55,7 @@ function fillForm(article) {
   for (const key of Object.keys(empty)) form[key] = article[key] ?? empty[key]
   form.tagIds = [...(article.tagIds ?? [])]
   savedSnapshot.value = JSON.stringify(payload())
+  conflict.value = false; serverCopy.value = null
 }
 async function loadDocument() {
   // 首次保存只把/new替换成真实编号，已有输入及错误提示不因换网址而消失。
@@ -69,9 +72,9 @@ async function loadDocument() {
 async function persist() {
   if (!form.title.trim() || !form.contentMarkdown.trim()) throw new Error('请填写标题和Markdown正文。')
   const isNew = form.id === null
-  const result = await adminRequest(isNew ? '/articles' : `/articles/${form.id}`, { method: isNew ? 'POST' : 'PUT', body: JSON.stringify(payload()) })
+  const result = await adminRequest(isNew ? '/articles' : `/articles/${form.id}`, { method: isNew ? 'POST' : 'PUT', headers: isNew ? {} : versionHeaders(), body: JSON.stringify(payload()) })
   // 先记录编号和快照；后续发布或网址同步失败也不会重复创建文章。
-  form.id = result.id; form.status = result.status; savedSnapshot.value = JSON.stringify(payload())
+  form.id = result.id; form.status = result.status; form.version = result.version; form.hasUnpublishedChanges = result.hasUnpublishedChanges ?? false; savedSnapshot.value = JSON.stringify(payload())
   if (isNew) await navigateSaved(() => router.replace({ path: `/admin/articles/${result.id}/edit`, query: { from: backTarget.value } }))
 }
 async function save(publish = false) {
@@ -80,9 +83,10 @@ async function save(publish = false) {
   let persisted = false
   try {
     await persist(); persisted = true
-    if (publish) { const result = await adminRequest(`/articles/${form.id}/publish`, { method: 'POST' }); form.status = result.status }
-    notifyAdmin(publish ? '文章已发布，访客现在可以阅读。' : '文章已保存。')
-  } catch (cause) { error.value = (publish && persisted ? '文章已保存，但发布未完成：' : '') + cause.message }
+    if (publish) { const result = await adminRequest(`/articles/${form.id}/publish`, { method: 'POST', headers: versionHeaders() }); form.status = result.status; form.version = result.version; form.hasUnpublishedChanges = false }
+    conflict.value = false; serverCopy.value = null
+    notifyAdmin(publish ? '文章已发布，访客现在可以阅读。' : form.status === 'PUBLISHED' ? '编辑稿已保存，公开版本尚未更新。' : '草稿已保存。')
+  } catch (cause) { conflict.value = cause.status === 412; error.value = (publish && persisted ? '文章已保存，但发布未完成：' : '') + cause.message }
   finally { busy.value = false }
 }
 async function resolveAction(accepted) {
@@ -92,17 +96,25 @@ async function resolveAction(accepted) {
   busy.value = true; error.value = ''
   try {
     if (requested === 'unpublish') {
-      const result = await adminRequest(`/articles/${form.id}/unpublish`, { method: 'POST' })
-      form.status = result.status; notifyAdmin('文章已撤回，当前未保存的输入仍保留。')
+      const result = await adminRequest(`/articles/${form.id}/unpublish`, { method: 'POST', headers: versionHeaders() })
+      form.status = result.status; form.version = result.version; notifyAdmin('文章已撤回，当前未保存的输入仍保留。')
     } else if (requested === 'recycle') {
-      await adminRequest(`/articles/${form.id}`, { method: 'DELETE' })
+      await adminRequest(`/articles/${form.id}`, { method: 'DELETE', headers: versionHeaders() })
       savedSnapshot.value = JSON.stringify(payload()); notifyAdmin('文章已移到回收站。')
       await navigateSaved(() => router.replace(backTarget.value))
     }
-  } catch (cause) { error.value = cause.message }
+  } catch (cause) { conflict.value = cause.status === 412; error.value = cause.message }
   finally { busy.value = false }
 }
 async function retryLoad() { if (await askDiscard()) { ready.value = false; return loadDocument() } }
+async function compareServer() {
+  if (busy.value || !form.id) return
+  busy.value = true
+  try { serverCopy.value = await adminRequest(`/articles/${form.id}`) }
+  catch (cause) { error.value = cause.message }
+  finally { busy.value = false }
+  // 读取对照不会更新form.version，避免下一次保存悄悄覆盖另一窗口的稿件。
+}
 async function insertMarkdown(before, after = '', sample = '文字') {
   const input = textarea.value
   if (!input) return
@@ -118,10 +130,16 @@ watch(() => route.params.id, loadDocument, { immediate: true })
     <header class="studio-page-heading"><div><p class="studio-eyebrow">WRITE / KEEP A LITTLE LIGHT</p><h1>{{ form.id === null ? '新建文章' : '编辑文章' }}</h1><p role="status">{{ loading ? '正在加载…' : busy ? '正在保存或处理…' : dirty ? '有未保存的修改' : form.id === null ? '尚未创建草稿' : '当前修改已保存' }}</p></div><span v-if="ready" class="studio-status">{{ form.deletedAt ? '已回收' : form.status === 'PUBLISHED' ? '已发布' : '草稿' }}</span></header>
     <PageState v-if="loading" kind="loading" title="正在打开写作内容…" />
     <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <section v-if="conflict" class="studio-warning" aria-label="版本冲突处理">
+      <p>请先复制保留需要的本地修改，再核对并重新加载服务器版本。不会自动合并或覆盖另一窗口的内容。</p>
+      <button type="button" :disabled="busy" @click="compareServer">查看服务器版本（保留当前输入）</button>
+      <button type="button" :disabled="busy" @click="retryLoad">重新加载服务器版本</button>
+      <details v-if="serverCopy"><summary>服务器版本 {{ serverCopy.version }}：{{ serverCopy.title }}</summary><p>{{ serverCopy.summary }}</p><label>服务器正文（只读）<textarea :value="serverCopy.contentMarkdown" readonly rows="8"></textarea></label></details>
+    </section>
     <button v-if="!ready && !loading" type="button" @click="retryLoad">重新加载文章</button>
     <div v-if="ready && form.deletedAt" class="v2-state">这篇文章已回收，请到回收站恢复为草稿后再编辑。<RouterLink to="/admin/articles?recycled=true">打开回收站 →</RouterLink></div>
     <form v-else-if="ready" @submit.prevent="save(false)"><fieldset :disabled="busy || loading || imageBusy">
-      <p v-if="form.status === 'PUBLISHED'" class="studio-warning">这篇文章已经公开，保存会立即更新访客看到的内容。需要停止公开时可先撤回。</p>
+      <p v-if="form.status === 'PUBLISHED'" class="studio-warning">{{ form.hasUnpublishedChanges ? '已有尚未发布的编辑稿。' : '当前有一个公开版本。' }}保存仅更新编辑稿；点击“发布修改”后，访客才会看到新内容、标签和图片。</p>
       <label>标题<input v-model="form.title" maxlength="200" required class="studio-title-input" /></label>
       <div class="studio-editor-meta"><label>栏目<select v-model="form.type"><option value="NOTE">笔记</option><option value="THOUGHT">心得</option><option value="DIARY">日记</option></select></label><label>分类<select v-model="form.categoryId"><option :value="null">未分类</option><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option></select></label></div>
       <label>摘要<textarea v-model="form.summary" maxlength="500" rows="3"></textarea></label>
@@ -132,7 +150,7 @@ watch(() => route.params.id, loadDocument, { immediate: true })
       <img v-if="imagePreviews[localMediaBase(form.coverUrl)]" class="studio-cover-preview" :src="imagePreviews[localMediaBase(form.coverUrl)]" alt="当前封面预览" />
       <AdminMediaPanel :references="localImages" @choose="chooseMedia" @previews="imagePreviews = $event" @busy="imageBusy = $event" />
       <div role="group" aria-label="文章标签" class="studio-tag-picker"><p>文章标签（最多20个）</p><label v-for="tag in tags" :key="tag.id" class="studio-checkbox"><input v-model="form.tagIds" type="checkbox" :value="tag.id" :disabled="form.tagIds.length >= 20 && !form.tagIds.includes(tag.id)" />{{ tag.name }}</label><p v-if="!tags.length">暂无标签，可到分类与标签页面创建。</p></div>
-      <div class="studio-editor-actions"><button type="submit">{{ form.status === 'PUBLISHED' ? '保存公开修改' : '保存草稿' }}</button><button v-if="form.status !== 'PUBLISHED'" type="button" @click="action = 'publish'">保存并发布</button><button v-if="form.status === 'PUBLISHED'" type="button" @click="action = 'unpublish'">撤回公开</button><button v-if="form.id" type="button" @click="action = 'recycle'">移到回收站</button><span>{{ form.contentMarkdown.length }} 字符</span></div>
+      <div class="studio-editor-actions"><button type="submit">{{ form.status === 'PUBLISHED' ? '保存编辑稿' : '保存草稿' }}</button><button type="button" @click="action = 'publish'">{{ form.status === 'PUBLISHED' ? '发布修改' : '保存并发布' }}</button><button v-if="form.status === 'PUBLISHED'" type="button" @click="action = 'unpublish'">撤回公开</button><button v-if="form.id" type="button" @click="action = 'recycle'">移到回收站</button><span>{{ form.contentMarkdown.length }} 字符</span></div>
     </fieldset></form>
     <AdminConfirmDialog v-if="discardOpen" title="放弃未保存的修改？" message="离开后，尚未保存的输入会丢失。可以取消并先保存。" confirm-text="放弃并离开" @resolve="resolveDiscard" />
     <AdminConfirmDialog v-if="action" :title="action === 'publish' ? '确认公开文章？' : action === 'unpublish' ? '撤回公开？' : '移到回收站？'" :message="action === 'publish' ? (form.type === 'DIARY' ? '这篇日记将向所有访客公开，请确认内容适合展示。' : '将先保存当前输入，再公开给所有访客。') : action === 'unpublish' ? '撤回后访客无法读取，未保存输入仍留在编辑器。' : '正文、分类标签会保留；尚未保存的修改会放弃，恢复时先回到草稿。'" :confirm-text="action === 'publish' ? '确认发布' : action === 'unpublish' ? '确认撤回' : '确认回收'" @resolve="resolveAction" />
